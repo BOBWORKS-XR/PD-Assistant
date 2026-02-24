@@ -63,9 +63,9 @@ body {
   left: 0;
   right: 0;
   z-index: 50;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
-  box-shadow: 0 8px 20px rgba(16, 32, 50, 0.14);
+  border-bottom: 2px solid var(--blue);
+  background: linear-gradient(180deg, var(--panel) 0%, var(--info-bg) 100%);
+  box-shadow: 0 12px 24px rgba(16, 32, 50, 0.2);
 }
 
 .ops-meta {
@@ -84,7 +84,7 @@ body {
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
-  background: var(--info-bg);
+  background: var(--panel);
 }
 
 .ops-grid {
@@ -99,10 +99,10 @@ body {
 .ops-cell {
   display: grid;
   gap: 3px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--context-line);
   border-radius: 8px;
   padding: 8px;
-  background: var(--info-bg);
+  background: var(--panel);
 }
 
 .ops-label {
@@ -190,6 +190,13 @@ label {
 }
 
 fieldset label {
+  display: grid;
+  gap: 6px;
+  align-items: start;
+}
+
+fieldset label:has(input[type="checkbox"]),
+fieldset label:has(input[type="radio"]) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -254,6 +261,14 @@ button:hover {
   display: grid;
   gap: 10px;
   grid-template-columns: 1fr 1fr;
+}
+
+.investigation-layout .grid {
+  align-items: start;
+}
+
+.investigation-layout fieldset {
+  gap: 10px;
 }
 
 .dynamic-fieldset.is-hidden {

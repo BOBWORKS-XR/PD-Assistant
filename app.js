@@ -382,7 +382,7 @@
       opsOfficerPatrol.textContent = "Officer Patrol: " + data.officerProfile.patrolLabel;
     }
     if (opsSuspects) {
-      opsSuspects.textContent = "Suspects: " + (data.suspectSummary || "None listed");
+      opsSuspects.textContent = "Suspects: " + (data.suspectSummary || "unknown");
     }
   }
 
@@ -456,7 +456,7 @@
       renderNecessityChecklist(data.necessityChecklist) +
       renderList("PACE Triggers (Live)", data.paceTriggers) +
       renderList("Arrest Reasons (Necessity Indicators)", data.arrestReasons) +
-      renderList("Likely Offences (UK-Style RP)", data.likelyOffences) +
+      renderList("Likely Offences", data.likelyOffences) +
       renderList("Immediate Actions", data.immediateActions) +
       renderList("Tactical Options", data.tacticalActions) +
       renderList("Suggested UK Sections", data.sections) +

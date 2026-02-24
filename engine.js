@@ -255,7 +255,7 @@
   }
 
   function summarizeSuspects(names) {
-    if (!Array.isArray(names) || names.length === 0) return "None listed";
+    if (!Array.isArray(names) || names.length === 0) return "unknown";
     if (names.length === 1) return names[0];
     if (names.length === 2) return names[0] + " and " + names[1];
     return names[0] + ", " + names[1] + " +" + (names.length - 2) + " more";

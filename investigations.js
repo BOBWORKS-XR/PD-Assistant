@@ -109,7 +109,7 @@
       return caseData.scene.suspectNames.join(", ");
     }
     if (caseData && caseData.suspectSummary) return caseData.suspectSummary;
-    return "None listed";
+    return "unknown";
   }
 
   function buildDefaultIncidentSummary(caseData) {
