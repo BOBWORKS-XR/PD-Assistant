@@ -13,9 +13,6 @@
   var stampStopBtn = document.getElementById("stamp-stop-btn");
   var stampSearchBtn = document.getElementById("stamp-search-btn");
   var stampArrestBtn = document.getElementById("stamp-arrest-btn");
-  var stampStopValue = document.getElementById("stamp-stop-value");
-  var stampSearchValue = document.getElementById("stamp-search-value");
-  var stampArrestValue = document.getElementById("stamp-arrest-value");
   var opsCollapseBtn = document.getElementById("ops-collapse-btn");
   var opsClearBtn = document.getElementById("ops-clear-btn");
   var opsDisclaimer = document.querySelector(".ops-disclaimer");
@@ -95,10 +92,15 @@
     }
   }
 
+  function setStampButtonText(button, label, value) {
+    if (!button) return;
+    button.textContent = label + "\n" + (value || "Not stamped");
+  }
+
   function renderTimelineLabels(timeline) {
-    if (stampStopValue) stampStopValue.textContent = timeline.timeStop || "Not stamped";
-    if (stampSearchValue) stampSearchValue.textContent = timeline.timeSearch || "Not stamped";
-    if (stampArrestValue) stampArrestValue.textContent = timeline.timeArrestEvent || "Not stamped";
+    setStampButtonText(stampStopBtn, "STOP", timeline.timeStop);
+    setStampButtonText(stampSearchBtn, "SEARCH", timeline.timeSearch);
+    setStampButtonText(stampArrestBtn, "ARREST", timeline.timeArrestEvent);
   }
 
   function stampTimelineField(key) {
@@ -255,16 +257,17 @@
   function applyTheme(theme) {
     document.body.classList.toggle("theme-dark", theme === "dark");
     if (themeToggle) {
-      themeToggle.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+      themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+      themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
     }
   }
 
   function initTheme() {
     var saved = localStorage.getItem("epical_pd_theme");
-    var theme = saved === "light" ? "light" : "dark";
-    if (!saved) {
-      localStorage.setItem("epical_pd_theme", "dark");
-    }
+    var osPrefersDark =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var theme = saved === "dark" || saved === "light" ? saved : osPrefersDark ? "dark" : "light";
     applyTheme(theme);
   }
 
@@ -645,7 +648,7 @@
     if (!opsBar) return;
     opsBar.classList.toggle("is-collapsed", collapsed);
     if (opsCollapseBtn) {
-      opsCollapseBtn.textContent = collapsed ? "Expand ^" : "Collapse v";
+      opsCollapseBtn.textContent = collapsed ? "\\/" : "/\\";
       opsCollapseBtn.setAttribute("aria-expanded", String(!collapsed));
       opsCollapseBtn.setAttribute("aria-label", collapsed ? "Expand top bar" : "Collapse top bar");
     }

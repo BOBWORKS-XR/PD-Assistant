@@ -32,27 +32,9 @@
         </div>
       </div>
       <div class="ops-stamps">
-        <div class="ops-stamp-card">
-          <span class="ops-stamp-label">Time of Stop</span>
-          <div class="ops-stamp-row">
-            <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-stop-btn">Stamp UK Time</button>
-            <span class="ops-stamp-value" id="stamp-stop-value">Not stamped</span>
-          </div>
-        </div>
-        <div class="ops-stamp-card">
-          <span class="ops-stamp-label">Time of Search</span>
-          <div class="ops-stamp-row">
-            <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-search-btn">Stamp UK Time</button>
-            <span class="ops-stamp-value" id="stamp-search-value">Not stamped</span>
-          </div>
-        </div>
-        <div class="ops-stamp-card">
-          <span class="ops-stamp-label">Time of Arrest</span>
-          <div class="ops-stamp-row">
-            <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-arrest-btn">Stamp UK Time</button>
-            <span class="ops-stamp-value" id="stamp-arrest-value">Not stamped</span>
-          </div>
-        </div>
+        <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-stop-btn">STOP Not stamped</button>
+        <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-search-btn">SEARCH Not stamped</button>
+        <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-arrest-btn">ARREST Not stamped</button>
       </div>
       <div class="ops-disclaimer">
         <span>Disclaimer: This is not yet approved for police duty. Test or reference purposes only.</span>
@@ -72,7 +54,7 @@
             aria-expanded="true"
             aria-label="Collapse top bar"
           >
-            Collapse v
+            /\
           </button>
         </div>
       </div>
@@ -86,7 +68,7 @@
               <h1>EPICAL PD Assistant</h1>
               <p class="sub">Scene decision support and city-computer handover</p>
             </div>
-            <button type="button" id="theme-toggle" class="secondary-btn">Dark Mode</button>
+            <button type="button" id="theme-toggle" class="secondary-btn" aria-label="Toggle theme">🌙</button>
           </div>
           <p class="muted">
             City policy profile: non-motorway limit 50 mph, motorway 100 mph, cannabis <=15g usually confiscation, cash up to GBP
