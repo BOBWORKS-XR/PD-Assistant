@@ -71,17 +71,17 @@ body {
 .ops-meta {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 8px 14px 0;
+  padding: 5px 10px 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .ops-meta span {
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--muted);
   background: var(--panel);
@@ -90,23 +90,39 @@ body {
 .ops-grid {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 8px 14px 10px;
+  padding: 5px 10px 6px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 6px;
 }
 
 .ops-cell {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   border: 1px solid var(--context-line);
   border-radius: 8px;
-  padding: 8px;
+  padding: 6px;
   background: var(--panel);
+  cursor: pointer;
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.ops-cell:hover {
+  border-color: var(--blue);
+}
+
+.ops-cell:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.ops-cell.is-expanded {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px rgba(63, 140, 255, 0.45);
 }
 
 .ops-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -114,16 +130,27 @@ body {
 }
 
 .ops-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-cell.is-expanded .ops-value {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
 }
 
 .ops-disclaimer {
-  padding: 7px 14px 8px;
+  padding: 6px 10px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.01em;
   color: #fff5f5;
@@ -134,23 +161,23 @@ body {
 .ops-stamps {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 0 14px 8px;
+  padding: 0 10px 6px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 .ops-stamp-card {
   border: 1px solid var(--context-line);
   border-radius: 8px;
   background: var(--panel);
-  padding: 7px;
+  padding: 6px;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ops-stamp-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -160,42 +187,57 @@ body {
 .ops-stamp-row {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
 .ops-stamp-btn {
-  min-width: 110px;
-  padding: 6px 9px;
+  min-width: 96px;
+  padding: 5px 8px;
+  font-size: 12px;
 }
 
 .ops-stamp-value {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
 }
 
-.ops-tabs {
+.ops-tabs-row {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 8px 14px 10px;
+  padding: 7px 10px 8px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+}
+
+.ops-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ops-tabs-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .ops-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
-  padding: 0 12px;
+  min-height: 30px;
+  padding: 0 10px;
   border-radius: 8px;
   border: 1px solid var(--secondary-line);
   background: var(--secondary-bg);
   color: var(--secondary-ink);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -205,8 +247,28 @@ body {
   color: #ffffff;
 }
 
-.ops-bar-lite .ops-tabs {
-  padding-top: 10px;
+.ops-collapse-btn {
+  min-width: 36px;
+  padding: 0 8px;
+}
+
+.danger-btn {
+  min-width: 70px;
+  border: 1px solid #5f1212;
+  color: #ffe2e2;
+  background: linear-gradient(120deg, #b51a1a 0%, #8b0f0f 100%);
+  font-size: 12px;
+}
+
+.ops-bar.is-collapsed .ops-meta,
+.ops-bar.is-collapsed .ops-grid,
+.ops-bar.is-collapsed .ops-stamps,
+.ops-bar.is-collapsed .ops-disclaimer {
+  display: none;
+}
+
+.ops-bar.is-collapsed {
+  box-shadow: 0 8px 14px rgba(16, 32, 50, 0.16);
 }
 
 .layout {
@@ -334,6 +396,16 @@ button {
   background: var(--secondary-bg);
   font-weight: 700;
   min-width: 108px;
+}
+
+.secondary-btn.ops-stamp-btn {
+  min-width: 96px;
+  padding: 5px 8px;
+}
+
+.secondary-btn.ops-collapse-btn {
+  min-width: 36px;
+  padding: 0 8px;
 }
 
 .small-btn {
@@ -599,7 +671,7 @@ code {
 
 @media (max-width: 1024px) {
   :root {
-    --ops-bar-offset: 184px;
+    --ops-bar-offset: 156px;
   }
 
   .ops-stamps {
@@ -613,11 +685,20 @@ code {
   .layout {
     grid-template-columns: 1fr;
   }
+
+  .ops-cell.is-expanded {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 640px) {
   :root {
-    --ops-bar-offset: 288px;
+    --ops-bar-offset: 144px;
+  }
+
+  .ops-tabs-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .ops-stamps {
@@ -630,7 +711,7 @@ code {
   }
 
   .ops-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .grid,

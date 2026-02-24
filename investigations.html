@@ -7,14 +7,66 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="ops-bar ops-bar-lite" id="ops-bar">
+    <header class="ops-bar is-collapsed" id="ops-bar">
+      <div class="ops-meta">
+        <span id="ops-officer">Officer: Unassigned</span>
+        <span id="ops-officer-patrol">Officer Patrol: Unset</span>
+        <span id="ops-suspects">Suspects: unknown</span>
+      </div>
+      <div class="ops-grid">
+        <div class="ops-cell">
+          <span class="ops-label">Top Point</span>
+          <span class="ops-value" id="ops-top-point">Awaiting case data</span>
+        </div>
+        <div class="ops-cell">
+          <span class="ops-label">Urgent Action</span>
+          <span class="ops-value" id="ops-urgent-action">Awaiting case data</span>
+        </div>
+        <div class="ops-cell">
+          <span class="ops-label">Key Section</span>
+          <span class="ops-value" id="ops-key-section">Awaiting case data</span>
+        </div>
+        <div class="ops-cell">
+          <span class="ops-label">Next Step</span>
+          <span class="ops-value" id="ops-next-step">Awaiting case data</span>
+        </div>
+      </div>
+      <div class="ops-stamps">
+        <div class="ops-stamp-card">
+          <span class="ops-stamp-label">Time of Stop</span>
+          <div class="ops-stamp-row">
+            <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-stop-btn">Stamp UK Time</button>
+            <span class="ops-stamp-value" id="stamp-stop-value">Not stamped</span>
+          </div>
+        </div>
+        <div class="ops-stamp-card">
+          <span class="ops-stamp-label">Time of Search</span>
+          <div class="ops-stamp-row">
+            <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-search-btn">Stamp UK Time</button>
+            <span class="ops-stamp-value" id="stamp-search-value">Not stamped</span>
+          </div>
+        </div>
+        <div class="ops-stamp-card">
+          <span class="ops-stamp-label">Time of Arrest</span>
+          <div class="ops-stamp-row">
+            <button type="button" class="secondary-btn ops-stamp-btn" id="stamp-arrest-btn">Stamp UK Time</button>
+            <span class="ops-stamp-value" id="stamp-arrest-value">Not stamped</span>
+          </div>
+        </div>
+      </div>
       <div class="ops-disclaimer">
         Disclaimer: This is not yet approved for police duty. Test or reference purposes only.
       </div>
-      <nav class="ops-tabs" aria-label="Assistant Tabs">
-        <a class="ops-tab" href="./index.html">Assistant</a>
-        <a class="ops-tab is-active" aria-current="page" href="./investigations.html">Investigation</a>
-      </nav>
+      <div class="ops-tabs-row">
+        <nav class="ops-tabs" aria-label="Assistant Tabs">
+          <a class="ops-tab" href="./index.html">Assistant</a>
+          <a class="ops-tab is-active" aria-current="page" href="./investigations.html">Investigation</a>
+        </nav>
+        <div class="ops-tabs-actions">
+          <button type="button" id="ops-clear-btn" class="danger-btn">CLEAR</button>
+          <button type="button" id="ops-collapse-btn" class="secondary-btn ops-collapse-btn" aria-expanded="false">▸</button>
+        </div>
+      </div>
     </header>
 
     <main class="layout investigation-layout">

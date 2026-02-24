@@ -3,6 +3,21 @@
   var form = document.getElementById("investigation-form");
   var output = document.getElementById("investigation-log");
   var opsBar = document.getElementById("ops-bar");
+  var opsTopPoint = document.getElementById("ops-top-point");
+  var opsUrgentAction = document.getElementById("ops-urgent-action");
+  var opsKeySection = document.getElementById("ops-key-section");
+  var opsNextStep = document.getElementById("ops-next-step");
+  var opsOfficer = document.getElementById("ops-officer");
+  var opsOfficerPatrol = document.getElementById("ops-officer-patrol");
+  var opsSuspects = document.getElementById("ops-suspects");
+  var stampStopBtn = document.getElementById("stamp-stop-btn");
+  var stampSearchBtn = document.getElementById("stamp-search-btn");
+  var stampArrestBtn = document.getElementById("stamp-arrest-btn");
+  var stampStopValue = document.getElementById("stamp-stop-value");
+  var stampSearchValue = document.getElementById("stamp-search-value");
+  var stampArrestValue = document.getElementById("stamp-arrest-value");
+  var opsCollapseBtn = document.getElementById("ops-collapse-btn");
+  var opsClearBtn = document.getElementById("ops-clear-btn");
   var arrestTimeInput = document.getElementById("arrest-time");
   var arrestLocationInput = document.getElementById("arrest-location");
   var timeStopInput = document.getElementById("time-stop");
@@ -11,6 +26,8 @@
   var copyButton = document.getElementById("copy-log");
   var themeToggle = document.getElementById("theme-toggle");
   var TIMELINE_KEY = "epical_pd_timeline";
+  var FORM_CACHE_KEY = "epical_pd_investigation_form_v1";
+  var OPS_COLLAPSE_KEY = "epical_pd_ops_bar_collapsed_investigation";
 
   var cautionText =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
@@ -66,6 +83,171 @@
       console.error("Unable to read stored timeline", error);
       return { timeStop: "", timeSearch: "", timeArrestEvent: "" };
     }
+  }
+
+  function saveStoredTimeline(timeline) {
+    try {
+      localStorage.setItem(TIMELINE_KEY, JSON.stringify(timeline));
+    } catch (error) {
+      console.error("Unable to save timeline", error);
+    }
+  }
+
+  function renderTimelineLabels(timeline) {
+    if (stampStopValue) stampStopValue.textContent = timeline.timeStop || "Not stamped";
+    if (stampSearchValue) stampSearchValue.textContent = timeline.timeSearch || "Not stamped";
+    if (stampArrestValue) stampArrestValue.textContent = timeline.timeArrestEvent || "Not stamped";
+  }
+
+  function stampTimelineField(key) {
+    var timeline = getStoredTimeline();
+    var stamp = formatCityDateTime();
+    timeline[key] = stamp;
+    saveStoredTimeline(timeline);
+    renderTimelineLabels(timeline);
+
+    if (timeStopInput && key === "timeStop") timeStopInput.value = stamp;
+    if (timeSearchInput && key === "timeSearch") timeSearchInput.value = stamp;
+    if (timeArrestEventInput && key === "timeArrestEvent") timeArrestEventInput.value = stamp;
+    if (key === "timeArrestEvent" && arrestTimeInput) {
+      arrestTimeInput.value = stamp;
+    }
+  }
+
+  function bindTopStampButtons(caseData) {
+    function maybeRefresh() {
+      if (caseData) {
+        refreshOutput(caseData);
+      }
+    }
+
+    if (stampStopBtn) {
+      stampStopBtn.addEventListener("click", function () {
+        stampTimelineField("timeStop");
+        maybeRefresh();
+      });
+    }
+    if (stampSearchBtn) {
+      stampSearchBtn.addEventListener("click", function () {
+        stampTimelineField("timeSearch");
+        maybeRefresh();
+      });
+    }
+    if (stampArrestBtn) {
+      stampArrestBtn.addEventListener("click", function () {
+        stampTimelineField("timeArrestEvent");
+        maybeRefresh();
+      });
+    }
+  }
+
+  function clearAllCachedData() {
+    [
+      "epical_pd_scene_form_v1",
+      "epical_pd_investigation_form_v1",
+      "epical_pd_officer_profile",
+      "epical_pd_timeline",
+      "epical_pd_last_case",
+      "epical_pd_ops_bar_collapsed_assistant",
+      "epical_pd_ops_bar_collapsed_investigation",
+    ].forEach(function (key) {
+      localStorage.removeItem(key);
+    });
+  }
+
+  function saveInvestigationFormCache(values) {
+    try {
+      localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(values));
+    } catch (error) {
+      console.error("Unable to save investigation form cache", error);
+    }
+  }
+
+  function setNamedControlValue(name, value) {
+    var controls = Array.prototype.slice.call(form.querySelectorAll('[name="' + name + '"]'));
+    if (controls.length === 0) return;
+    var first = controls[0];
+
+    if (first.type === "checkbox") {
+      first.checked = Boolean(value);
+      return;
+    }
+    if (first.type === "radio") {
+      controls.forEach(function (control) {
+        control.checked = String(control.value) === String(value);
+      });
+      return;
+    }
+
+    first.value = value != null ? String(value) : "";
+  }
+
+  function restoreInvestigationFormCache() {
+    try {
+      var raw = localStorage.getItem(FORM_CACHE_KEY);
+      if (!raw) return;
+      var cached = JSON.parse(raw);
+      if (!cached || typeof cached !== "object") return;
+      Object.keys(cached).forEach(function (key) {
+        setNamedControlValue(key, cached[key]);
+      });
+    } catch (error) {
+      console.error("Unable to restore investigation form cache", error);
+    }
+  }
+
+  function getDisposalLabel(disposal) {
+    if (!disposal) return "";
+    if (typeof disposal === "string") return disposal;
+    return disposal.method || "";
+  }
+
+  function setOpsValue(el, shortValue, fullValue) {
+    if (!el) return;
+    var shortText = String(shortValue || "").trim();
+    var fullText = String(fullValue || shortText).trim();
+    el.dataset.short = shortText;
+    el.dataset.full = fullText;
+    var parent = el.closest(".ops-cell");
+    el.textContent = parent && parent.classList.contains("is-expanded") ? fullText : shortText;
+  }
+
+  function bindOpsCellExpansion() {
+    if (!opsBar) return;
+    var cells = Array.prototype.slice.call(opsBar.querySelectorAll(".ops-cell"));
+    cells.forEach(function (cell) {
+      cell.setAttribute("role", "button");
+      cell.tabIndex = 0;
+      cell.setAttribute("aria-expanded", "false");
+
+      function toggle() {
+        var expand = !cell.classList.contains("is-expanded");
+        cells.forEach(function (other) {
+          other.classList.remove("is-expanded");
+          other.setAttribute("aria-expanded", "false");
+          var valueEl = other.querySelector(".ops-value");
+          if (valueEl) {
+            valueEl.textContent = valueEl.dataset.short || valueEl.textContent;
+          }
+        });
+        if (!expand) return;
+        cell.classList.add("is-expanded");
+        cell.setAttribute("aria-expanded", "true");
+        var expandedValue = cell.querySelector(".ops-value");
+        if (expandedValue) {
+          expandedValue.textContent = expandedValue.dataset.full || expandedValue.textContent;
+        }
+        syncOpsBarOffset();
+      }
+
+      cell.addEventListener("click", toggle);
+      cell.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle();
+        }
+      });
+    });
   }
 
   function applyTheme(theme) {
@@ -132,6 +314,44 @@
       " mph (+" +
       overLimit +
       ")</p>";
+  }
+
+  function updateOpsMeta(caseData) {
+    if (!caseData) return;
+    if (opsOfficer && caseData.officerProfile) {
+      opsOfficer.textContent = "Officer: " + caseData.officerProfile.display;
+    }
+    if (opsOfficerPatrol && caseData.officerProfile) {
+      opsOfficerPatrol.textContent = "Officer Patrol: " + caseData.officerProfile.patrolLabel;
+    }
+    if (opsSuspects) {
+      opsSuspects.textContent = "Suspects: " + formatSuspectSummary(caseData);
+    }
+
+    if (caseData.topBarSummary) {
+      setOpsValue(
+        opsTopPoint,
+        caseData.topBarSummary.topPoint,
+        caseData.triggerPointers && caseData.triggerPointers.length > 0 ? caseData.triggerPointers[0].title : caseData.topBarSummary.topPoint
+      );
+      setOpsValue(
+        opsUrgentAction,
+        caseData.topBarSummary.urgentAction,
+        caseData.immediateActions && caseData.immediateActions.length > 0
+          ? caseData.immediateActions[0]
+          : caseData.topBarSummary.urgentAction
+      );
+      setOpsValue(
+        opsKeySection,
+        caseData.topBarSummary.keySection,
+        caseData.sections && caseData.sections.length > 0 ? caseData.sections[0] : caseData.topBarSummary.keySection
+      );
+      setOpsValue(
+        opsNextStep,
+        caseData.topBarSummary.nextStep,
+        caseData.disposals && caseData.disposals.length > 0 ? getDisposalLabel(caseData.disposals[0]) : caseData.topBarSummary.nextStep
+      );
+    }
   }
 
   function formatOfficerIdentity(caseData) {
@@ -408,13 +628,48 @@
   }
 
   function refreshOutput(caseData) {
-    output.value = buildLog(caseData, readForm(caseData));
+    var values = readForm(caseData);
+    output.value = buildLog(caseData, values);
+    saveInvestigationFormCache(values);
   }
 
   function syncOpsBarOffset() {
     if (!opsBar) return;
     var h = opsBar.offsetHeight || 90;
     document.documentElement.style.setProperty("--ops-bar-offset", h + 8 + "px");
+  }
+
+  function setOpsBarCollapsed(collapsed) {
+    if (!opsBar) return;
+    opsBar.classList.toggle("is-collapsed", collapsed);
+    if (opsCollapseBtn) {
+      opsCollapseBtn.textContent = collapsed ? "▸" : "▾";
+      opsCollapseBtn.setAttribute("aria-expanded", String(!collapsed));
+    }
+    localStorage.setItem(OPS_COLLAPSE_KEY, collapsed ? "1" : "0");
+    syncOpsBarOffset();
+  }
+
+  function bindOpsBarActions() {
+    var savedState = localStorage.getItem(OPS_COLLAPSE_KEY);
+    var collapsed = savedState === null ? true : savedState === "1";
+    setOpsBarCollapsed(collapsed);
+
+    if (opsCollapseBtn) {
+      opsCollapseBtn.addEventListener("click", function () {
+        var next = !opsBar.classList.contains("is-collapsed");
+        setOpsBarCollapsed(next);
+      });
+    }
+
+    if (opsClearBtn) {
+      opsClearBtn.addEventListener("click", function () {
+        var confirmed = window.confirm("Clear all saved form data and timeline stamps?");
+        if (!confirmed) return;
+        clearAllCachedData();
+        window.location.reload();
+      });
+    }
   }
 
   function disableForm() {
@@ -431,25 +686,39 @@
   function init() {
     initTheme();
     window.addEventListener("resize", syncOpsBarOffset);
-    syncOpsBarOffset();
+    bindOpsCellExpansion();
+    bindOpsBarActions();
+    renderTimelineLabels(getStoredTimeline());
 
     if (themeToggle) {
       themeToggle.addEventListener("click", toggleTheme);
     }
 
     var caseData = getStoredCase();
+    bindTopStampButtons(caseData);
     renderSummary(caseData);
+    updateOpsMeta(caseData);
 
     if (!caseData) {
       disableForm();
+      syncOpsBarOffset();
       return;
     }
 
     initDefaults(caseData);
+    restoreInvestigationFormCache();
     refreshOutput(caseData);
 
     form.addEventListener("submit", function (event) {
       handleGenerate(event, caseData);
+    });
+
+    form.addEventListener("input", function () {
+      refreshOutput(caseData);
+    });
+
+    form.addEventListener("change", function () {
+      refreshOutput(caseData);
     });
 
     copyButton.addEventListener("click", function () {
@@ -469,6 +738,8 @@
         }
       );
     });
+
+    syncOpsBarOffset();
   }
 
   init();

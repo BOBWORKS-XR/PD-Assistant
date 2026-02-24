@@ -11,6 +11,8 @@
   var opsOfficer = document.getElementById("ops-officer");
   var opsOfficerPatrol = document.getElementById("ops-officer-patrol");
   var opsSuspects = document.getElementById("ops-suspects");
+  var opsCollapseBtn = document.getElementById("ops-collapse-btn");
+  var opsClearBtn = document.getElementById("ops-clear-btn");
   var stampStopBtn = document.getElementById("stamp-stop-btn");
   var stampSearchBtn = document.getElementById("stamp-search-btn");
   var stampArrestBtn = document.getElementById("stamp-arrest-btn");
@@ -26,6 +28,8 @@
   var officerCallsignInput = document.getElementById("officer-callsign");
   var OFFICER_PROFILE_KEY = "epical_pd_officer_profile";
   var TIMELINE_KEY = "epical_pd_timeline";
+  var FORM_CACHE_KEY = "epical_pd_scene_form_v1";
+  var OPS_COLLAPSE_KEY = "epical_pd_ops_bar_collapsed_assistant";
 
   function getCheckboxValues(formEl, name) {
     return Array.prototype.slice
@@ -103,6 +107,86 @@
     timeline[key] = formatUkTimelineStamp(new Date());
     saveTimeline(timeline);
     renderTimelineLabels(timeline);
+  }
+
+  function clearAllCachedData() {
+    [
+      "epical_pd_scene_form_v1",
+      "epical_pd_investigation_form_v1",
+      "epical_pd_officer_profile",
+      "epical_pd_timeline",
+      "epical_pd_last_case",
+      "epical_pd_ops_bar_collapsed_assistant",
+      "epical_pd_ops_bar_collapsed_investigation",
+    ].forEach(function (key) {
+      localStorage.removeItem(key);
+    });
+  }
+
+  function saveSceneFormCache(scene) {
+    try {
+      localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(scene));
+    } catch (error) {
+      console.error("Unable to save scene form cache", error);
+    }
+  }
+
+  function setNamedControlValue(name, value) {
+    var controls = Array.prototype.slice.call(form.querySelectorAll('[name="' + name + '"]'));
+    if (controls.length === 0) return;
+    var first = controls[0];
+
+    if (first.type === "checkbox") {
+      if (controls.length > 1) {
+        var selected = Array.isArray(value) ? value.map(String) : [];
+        controls.forEach(function (control) {
+          control.checked = selected.indexOf(String(control.value)) !== -1;
+        });
+      } else {
+        first.checked = Boolean(value);
+      }
+      return;
+    }
+
+    if (first.type === "radio") {
+      controls.forEach(function (control) {
+        control.checked = String(control.value) === String(value);
+      });
+      return;
+    }
+
+    if (controls.length > 1 && Array.isArray(value)) {
+      controls.forEach(function (control, index) {
+        control.value = value[index] != null ? String(value[index]) : "";
+      });
+      return;
+    }
+
+    first.value = value != null ? String(value) : "";
+  }
+
+  function restoreSceneFormCache() {
+    try {
+      var raw = localStorage.getItem(FORM_CACHE_KEY);
+      if (!raw) return;
+      var scene = JSON.parse(raw);
+      if (!scene || typeof scene !== "object") return;
+
+      if (suspectList) {
+        suspectList.innerHTML = "";
+        var names = Array.isArray(scene.suspectNames) && scene.suspectNames.length > 0 ? scene.suspectNames : [""];
+        names.forEach(function (name) {
+          appendSuspectRow(name);
+        });
+      }
+
+      Object.keys(scene).forEach(function (key) {
+        if (key === "suspectNames") return;
+        setNamedControlValue(key, scene[key]);
+      });
+    } catch (error) {
+      console.error("Unable to restore scene form cache", error);
+    }
   }
 
   function readForm(formEl) {
@@ -452,6 +536,64 @@
     }
   }
 
+  function getDisposalLabel(disposal) {
+    if (!disposal) return "";
+    if (typeof disposal === "string") return disposal;
+    return disposal.method || "";
+  }
+
+  function setOpsValue(el, shortValue, fullValue) {
+    if (!el) return;
+    var shortText = String(shortValue || "").trim();
+    var fullText = String(fullValue || shortText).trim();
+    el.dataset.short = shortText;
+    el.dataset.full = fullText;
+    var parent = el.closest(".ops-cell");
+    if (parent && parent.classList.contains("is-expanded")) {
+      el.textContent = fullText;
+    } else {
+      el.textContent = shortText;
+    }
+  }
+
+  function bindOpsCellExpansion() {
+    if (!opsBar) return;
+    var cells = Array.prototype.slice.call(opsBar.querySelectorAll(".ops-cell"));
+    cells.forEach(function (cell) {
+      cell.setAttribute("role", "button");
+      cell.tabIndex = 0;
+      cell.setAttribute("aria-expanded", "false");
+
+      function toggle() {
+        var expand = !cell.classList.contains("is-expanded");
+        cells.forEach(function (other) {
+          other.classList.remove("is-expanded");
+          other.setAttribute("aria-expanded", "false");
+          var valueEl = other.querySelector(".ops-value");
+          if (valueEl) {
+            valueEl.textContent = valueEl.dataset.short || valueEl.textContent;
+          }
+        });
+        if (!expand) return;
+        cell.classList.add("is-expanded");
+        cell.setAttribute("aria-expanded", "true");
+        var expandedValue = cell.querySelector(".ops-value");
+        if (expandedValue) {
+          expandedValue.textContent = expandedValue.dataset.full || expandedValue.textContent;
+        }
+        syncOpsBarOffset();
+      }
+
+      cell.addEventListener("click", toggle);
+      cell.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle();
+        }
+      });
+    });
+  }
+
   function render(data) {
     var riskClass = data.risk.level.toLowerCase();
     var blockedHtml =
@@ -539,10 +681,26 @@
       "</div>";
 
     if (data.topBarSummary) {
-      opsTopPoint.textContent = data.topBarSummary.topPoint;
-      opsUrgentAction.textContent = data.topBarSummary.urgentAction;
-      opsKeySection.textContent = data.topBarSummary.keySection;
-      opsNextStep.textContent = data.topBarSummary.nextStep;
+      setOpsValue(
+        opsTopPoint,
+        data.topBarSummary.topPoint,
+        data.triggerPointers && data.triggerPointers.length > 0 ? data.triggerPointers[0].title : data.topBarSummary.topPoint
+      );
+      setOpsValue(
+        opsUrgentAction,
+        data.topBarSummary.urgentAction,
+        data.immediateActions && data.immediateActions.length > 0 ? data.immediateActions[0] : data.topBarSummary.urgentAction
+      );
+      setOpsValue(
+        opsKeySection,
+        data.topBarSummary.keySection,
+        data.sections && data.sections.length > 0 ? data.sections[0] : data.topBarSummary.keySection
+      );
+      setOpsValue(
+        opsNextStep,
+        data.topBarSummary.nextStep,
+        data.disposals && data.disposals.length > 0 ? getDisposalLabel(data.disposals[0]) : data.topBarSummary.nextStep
+      );
     }
     updateOpsMeta(data);
     syncOpsBarOffset();
@@ -555,6 +713,7 @@
     var scene = readForm(form);
     updateCallsignPreview(scene);
     saveOfficerProfile(scene);
+    saveSceneFormCache(scene);
     var output = window.EpicalEngine.evaluateScene(scene);
     render(output);
   }
@@ -586,6 +745,39 @@
     var next = current === "dark" ? "light" : "dark";
     localStorage.setItem("epical_pd_theme", next);
     applyTheme(next);
+  }
+
+  function setOpsBarCollapsed(collapsed) {
+    if (!opsBar) return;
+    opsBar.classList.toggle("is-collapsed", collapsed);
+    if (opsCollapseBtn) {
+      opsCollapseBtn.textContent = collapsed ? "▸" : "▾";
+      opsCollapseBtn.setAttribute("aria-expanded", String(!collapsed));
+    }
+    localStorage.setItem(OPS_COLLAPSE_KEY, collapsed ? "1" : "0");
+    syncOpsBarOffset();
+  }
+
+  function bindOpsBarActions() {
+    var savedState = localStorage.getItem(OPS_COLLAPSE_KEY);
+    var collapsed = savedState === "1";
+    setOpsBarCollapsed(collapsed);
+
+    if (opsCollapseBtn) {
+      opsCollapseBtn.addEventListener("click", function () {
+        var next = !opsBar.classList.contains("is-collapsed");
+        setOpsBarCollapsed(next);
+      });
+    }
+
+    if (opsClearBtn) {
+      opsClearBtn.addEventListener("click", function () {
+        var confirmed = window.confirm("Clear all saved form data and timeline stamps?");
+        if (!confirmed) return;
+        clearAllCachedData();
+        window.location.reload();
+      });
+    }
   }
 
   function bindSuspectControls() {
@@ -646,10 +838,13 @@
 
   initTheme();
   restoreOfficerProfile();
+  ensureSuspectRows();
+  restoreSceneFormCache();
   renderTimelineLabels(readTimeline());
   bindTopStampButtons();
-  ensureSuspectRows();
   bindSuspectControls();
+  bindOpsCellExpansion();
+  bindOpsBarActions();
   syncOpsBarOffset();
   evaluateAndRender();
 })();

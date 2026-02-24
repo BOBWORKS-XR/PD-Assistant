@@ -57,10 +57,16 @@
       <div class="ops-disclaimer">
         Disclaimer: This is not yet approved for police duty. Test or reference purposes only.
       </div>
-      <nav class="ops-tabs" aria-label="Assistant Tabs">
-        <a class="ops-tab is-active" aria-current="page" href="./index.html">Assistant</a>
-        <a class="ops-tab" href="./investigations.html">Investigation</a>
-      </nav>
+      <div class="ops-tabs-row">
+        <nav class="ops-tabs" aria-label="Assistant Tabs">
+          <a class="ops-tab is-active" aria-current="page" href="./index.html">Assistant</a>
+          <a class="ops-tab" href="./investigations.html">Investigation</a>
+        </nav>
+        <div class="ops-tabs-actions">
+          <button type="button" id="ops-clear-btn" class="danger-btn">CLEAR</button>
+          <button type="button" id="ops-collapse-btn" class="secondary-btn ops-collapse-btn" aria-expanded="true">▾</button>
+        </div>
+      </div>
     </header>
 
     <main class="layout">
