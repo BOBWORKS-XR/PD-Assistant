@@ -120,6 +120,17 @@ body {
   color: var(--ink);
 }
 
+.ops-disclaimer {
+  padding: 7px 14px 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #fff5f5;
+  background: linear-gradient(180deg, #b01010 0%, #8d0c0c 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .layout {
   display: grid;
   gap: 16px;
