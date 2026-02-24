@@ -11,6 +11,12 @@
   var opsOfficer = document.getElementById("ops-officer");
   var opsOfficerPatrol = document.getElementById("ops-officer-patrol");
   var opsSuspects = document.getElementById("ops-suspects");
+  var stampStopBtn = document.getElementById("stamp-stop-btn");
+  var stampSearchBtn = document.getElementById("stamp-search-btn");
+  var stampArrestBtn = document.getElementById("stamp-arrest-btn");
+  var stampStopValue = document.getElementById("stamp-stop-value");
+  var stampSearchValue = document.getElementById("stamp-search-value");
+  var stampArrestValue = document.getElementById("stamp-arrest-value");
   var suspectList = document.getElementById("suspect-list");
   var addSuspectBtn = document.getElementById("add-suspect");
   var officerNameInput = form.querySelector('input[name="officerName"]');
@@ -19,6 +25,7 @@
   var officerPatrolInput = form.querySelector('select[name="officerPatrolMode"]');
   var officerCallsignInput = document.getElementById("officer-callsign");
   var OFFICER_PROFILE_KEY = "epical_pd_officer_profile";
+  var TIMELINE_KEY = "epical_pd_timeline";
 
   function getCheckboxValues(formEl, name) {
     return Array.prototype.slice
@@ -37,6 +44,65 @@
       .filter(function (name) {
         return name.length > 0;
       });
+  }
+
+  function formatUkTimelineStamp(dateObj) {
+    var formatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    var parts = formatter.formatToParts(dateObj || new Date());
+    var map = {};
+    parts.forEach(function (part) {
+      if (part.type !== "literal") {
+        map[part.type] = part.value;
+      }
+    });
+    return "[" + map.day + "/" + map.month + "/" + map.year + " " + map.hour + ":" + map.minute + "]";
+  }
+
+  function readTimeline() {
+    try {
+      var raw = localStorage.getItem(TIMELINE_KEY);
+      if (!raw) {
+        return { timeStop: "", timeSearch: "", timeArrestEvent: "" };
+      }
+      var parsed = JSON.parse(raw);
+      return {
+        timeStop: parsed.timeStop || "",
+        timeSearch: parsed.timeSearch || "",
+        timeArrestEvent: parsed.timeArrestEvent || "",
+      };
+    } catch (error) {
+      console.error("Unable to read timeline", error);
+      return { timeStop: "", timeSearch: "", timeArrestEvent: "" };
+    }
+  }
+
+  function saveTimeline(timeline) {
+    try {
+      localStorage.setItem(TIMELINE_KEY, JSON.stringify(timeline));
+    } catch (error) {
+      console.error("Unable to save timeline", error);
+    }
+  }
+
+  function renderTimelineLabels(timeline) {
+    if (stampStopValue) stampStopValue.textContent = timeline.timeStop || "Not stamped";
+    if (stampSearchValue) stampSearchValue.textContent = timeline.timeSearch || "Not stamped";
+    if (stampArrestValue) stampArrestValue.textContent = timeline.timeArrestEvent || "Not stamped";
+  }
+
+  function stampTimelineField(key) {
+    var timeline = readTimeline();
+    timeline[key] = formatUkTimelineStamp(new Date());
+    saveTimeline(timeline);
+    renderTimelineLabels(timeline);
   }
 
   function readForm(formEl) {
@@ -541,6 +607,24 @@
     });
   }
 
+  function bindTopStampButtons() {
+    if (stampStopBtn) {
+      stampStopBtn.addEventListener("click", function () {
+        stampTimelineField("timeStop");
+      });
+    }
+    if (stampSearchBtn) {
+      stampSearchBtn.addEventListener("click", function () {
+        stampTimelineField("timeSearch");
+      });
+    }
+    if (stampArrestBtn) {
+      stampArrestBtn.addEventListener("click", function () {
+        stampTimelineField("timeArrestEvent");
+      });
+    }
+  }
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     evaluateAndRender();
@@ -562,6 +646,8 @@
 
   initTheme();
   restoreOfficerProfile();
+  renderTimelineLabels(readTimeline());
+  bindTopStampButtons();
   ensureSuspectRows();
   bindSuspectControls();
   syncOpsBarOffset();

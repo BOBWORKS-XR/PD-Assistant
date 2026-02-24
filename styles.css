@@ -131,6 +131,84 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.ops-stamps {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 14px 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ops-stamp-card {
+  border: 1px solid var(--context-line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 7px;
+  display: grid;
+  gap: 6px;
+}
+
+.ops-stamp-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.ops-stamp-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.ops-stamp-btn {
+  min-width: 110px;
+  padding: 6px 9px;
+}
+
+.ops-stamp-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ops-tabs {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 14px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ops-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--secondary-line);
+  background: var(--secondary-bg);
+  color: var(--secondary-ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ops-tab.is-active {
+  border-color: var(--blue-strong);
+  background: linear-gradient(120deg, var(--blue) 0%, var(--blue-strong) 100%);
+  color: #ffffff;
+}
+
+.ops-bar-lite .ops-tabs {
+  padding-top: 10px;
+}
+
 .layout {
   display: grid;
   gap: 16px;
@@ -284,18 +362,6 @@ button:hover {
 
 .stamp-grid {
   grid-template-columns: 1fr;
-}
-
-.stamp-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-}
-
-.stamp-btn {
-  min-width: 132px;
-  white-space: nowrap;
 }
 
 .dynamic-fieldset.is-hidden {
@@ -536,6 +602,10 @@ code {
     --ops-bar-offset: 184px;
   }
 
+  .ops-stamps {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .ops-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -550,6 +620,15 @@ code {
     --ops-bar-offset: 288px;
   }
 
+  .ops-stamps {
+    grid-template-columns: 1fr;
+  }
+
+  .ops-stamp-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
   .ops-grid {
     grid-template-columns: 1fr;
   }
@@ -557,10 +636,6 @@ code {
   .grid,
   .info-bar,
   .quick-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stamp-row {
     grid-template-columns: 1fr;
   }
 }

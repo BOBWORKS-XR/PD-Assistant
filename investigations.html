@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <header class="ops-bar ops-bar-lite" id="ops-bar">
+      <div class="ops-disclaimer">
+        Disclaimer: This is not yet approved for police duty. Test or reference purposes only.
+      </div>
+      <nav class="ops-tabs" aria-label="Assistant Tabs">
+        <a class="ops-tab" href="./index.html">Assistant</a>
+        <a class="ops-tab is-active" aria-current="page" href="./investigations.html">Investigation</a>
+      </nav>
+    </header>
+
     <main class="layout investigation-layout">
       <section class="panel">
         <div class="panel-head-row">
@@ -57,27 +67,18 @@
             <div class="grid stamp-grid">
               <label>
                 Time of Stop
-                <div class="stamp-row">
-                  <input type="text" name="timeStop" id="time-stop" placeholder="[DD/MM/YY HH:MM]" />
-                  <button type="button" class="secondary-btn stamp-btn" data-stamp-target="time-stop">Stamp UK Time</button>
-                </div>
+                <input type="text" name="timeStop" id="time-stop" placeholder="[DD/MM/YY HH:MM]" />
               </label>
               <label>
                 Time of Search
-                <div class="stamp-row">
-                  <input type="text" name="timeSearch" id="time-search" placeholder="[DD/MM/YY HH:MM]" />
-                  <button type="button" class="secondary-btn stamp-btn" data-stamp-target="time-search">Stamp UK Time</button>
-                </div>
+                <input type="text" name="timeSearch" id="time-search" placeholder="[DD/MM/YY HH:MM]" />
               </label>
               <label>
                 Time of Arrest
-                <div class="stamp-row">
-                  <input type="text" name="timeArrestEvent" id="time-arrest-event" placeholder="[DD/MM/YY HH:MM]" />
-                  <button type="button" class="secondary-btn stamp-btn" data-stamp-target="time-arrest-event">Stamp UK Time</button>
-                </div>
+                <input type="text" name="timeArrestEvent" id="time-arrest-event" placeholder="[DD/MM/YY HH:MM]" />
               </label>
             </div>
-            <p class="muted">Use the stamp buttons to log timeline points in UK server time.</p>
+            <p class="muted">Timeline values are stamped from the Assistant top bar or can be edited here.</p>
           </fieldset>
 
           <fieldset>

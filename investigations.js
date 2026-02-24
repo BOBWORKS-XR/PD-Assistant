@@ -2,6 +2,7 @@
   var caseSummary = document.getElementById("case-summary");
   var form = document.getElementById("investigation-form");
   var output = document.getElementById("investigation-log");
+  var opsBar = document.getElementById("ops-bar");
   var arrestTimeInput = document.getElementById("arrest-time");
   var arrestLocationInput = document.getElementById("arrest-location");
   var timeStopInput = document.getElementById("time-stop");
@@ -9,6 +10,7 @@
   var timeArrestEventInput = document.getElementById("time-arrest-event");
   var copyButton = document.getElementById("copy-log");
   var themeToggle = document.getElementById("theme-toggle");
+  var TIMELINE_KEY = "epical_pd_timeline";
 
   var cautionText =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
@@ -47,6 +49,22 @@
     } catch (error) {
       console.error("Unable to read stored case", error);
       return null;
+    }
+  }
+
+  function getStoredTimeline() {
+    try {
+      var raw = localStorage.getItem(TIMELINE_KEY);
+      if (!raw) return { timeStop: "", timeSearch: "", timeArrestEvent: "" };
+      var parsed = JSON.parse(raw);
+      return {
+        timeStop: parsed.timeStop || "",
+        timeSearch: parsed.timeSearch || "",
+        timeArrestEvent: parsed.timeArrestEvent || "",
+      };
+    } catch (error) {
+      console.error("Unable to read stored timeline", error);
+      return { timeStop: "", timeSearch: "", timeArrestEvent: "" };
     }
   }
 
@@ -157,11 +175,12 @@
 
   function readForm(caseData) {
     var fd = new FormData(form);
+    var timeline = getStoredTimeline();
     return {
-      arrestTime: fd.get("arrestTime") || fd.get("timeArrestEvent") || formatCityDateTime(),
-      timeStop: fd.get("timeStop") || "",
-      timeSearch: fd.get("timeSearch") || "",
-      timeArrestEvent: fd.get("timeArrestEvent") || fd.get("arrestTime") || "",
+      arrestTime: fd.get("arrestTime") || fd.get("timeArrestEvent") || timeline.timeArrestEvent || formatCityDateTime(),
+      timeStop: fd.get("timeStop") || timeline.timeStop || "",
+      timeSearch: fd.get("timeSearch") || timeline.timeSearch || "",
+      timeArrestEvent: fd.get("timeArrestEvent") || fd.get("arrestTime") || timeline.timeArrestEvent || "",
       arrestLocation: fd.get("arrestLocation") || caseData.scene.location || "Unknown",
       arrestingOfficer: fd.get("arrestingOfficer") || "Unknown",
       assistingOfficers: fd.get("assistingOfficers") || "None recorded",
@@ -360,8 +379,12 @@
   }
 
   function initDefaults(caseData) {
-    arrestTimeInput.value = formatCityDateTime();
+    var timeline = getStoredTimeline();
+    arrestTimeInput.value = timeline.timeArrestEvent || formatCityDateTime();
     arrestLocationInput.value = caseData.scene.location || "";
+    if (timeStopInput) timeStopInput.value = timeline.timeStop || "";
+    if (timeSearchInput) timeSearchInput.value = timeline.timeSearch || "";
+    if (timeArrestEventInput) timeArrestEventInput.value = timeline.timeArrestEvent || arrestTimeInput.value;
 
     var incidentSummary = form.querySelector('textarea[name="incidentSummary"]');
     var chargesText = form.querySelector('textarea[name="chargesText"]');
@@ -388,25 +411,10 @@
     output.value = buildLog(caseData, readForm(caseData));
   }
 
-  function stampTimelineField(targetInput, caseData) {
-    if (!targetInput) return;
-    var stamp = formatCityDateTime();
-    targetInput.value = stamp;
-    if (targetInput === timeArrestEventInput && arrestTimeInput) {
-      arrestTimeInput.value = stamp;
-    }
-    refreshOutput(caseData);
-  }
-
-  function bindStampButtons(caseData) {
-    form.querySelectorAll(".stamp-btn").forEach(function (button) {
-      button.addEventListener("click", function () {
-        var targetId = button.getAttribute("data-stamp-target");
-        if (!targetId) return;
-        var input = document.getElementById(targetId);
-        stampTimelineField(input, caseData);
-      });
-    });
+  function syncOpsBarOffset() {
+    if (!opsBar) return;
+    var h = opsBar.offsetHeight || 90;
+    document.documentElement.style.setProperty("--ops-bar-offset", h + 8 + "px");
   }
 
   function disableForm() {
@@ -422,6 +430,9 @@
 
   function init() {
     initTheme();
+    window.addEventListener("resize", syncOpsBarOffset);
+    syncOpsBarOffset();
+
     if (themeToggle) {
       themeToggle.addEventListener("click", toggleTheme);
     }
@@ -435,7 +446,6 @@
     }
 
     initDefaults(caseData);
-    bindStampButtons(caseData);
     refreshOutput(caseData);
 
     form.addEventListener("submit", function (event) {
