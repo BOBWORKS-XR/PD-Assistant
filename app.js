@@ -218,7 +218,11 @@
       data.cautionText +
       "</code></p>" +
       renderList("Rationale", data.rationale) +
-      '<p><a href="./investigations.html" target="_blank" rel="noopener">Open Investigations Handover Page</a></p>';
+      '<div class="next-step">' +
+      "<h3>Next Step</h3>" +
+      "<p>Continue this scene into the city-computer record workflow.</p>" +
+      '<a class="handover-link" href="./investigations.html" target="_blank" rel="noopener">Open Investigations Handover Page</a>' +
+      "</div>";
 
     saveForInvestigations(data);
   }

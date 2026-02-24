@@ -123,7 +123,7 @@
       custodyBehavior: fd.get("custodyBehavior") || "No additional behavior notes entered.",
       bwvReviewer: fd.get("bwvReviewer") || "Not recorded",
       cautionGiven: fd.get("cautionGiven") === "yes",
-      evidenceReview: fd.get("evidenceReview") || "No additional BWV review notes entered.",
+      evidenceReview: fd.get("evidenceReview") || "No additional Bodycam (BVW) review notes entered.",
       arrestReasonOverride: fd.get("arrestReasonOverride") || "",
       chargesText: fd.get("chargesText") || "",
       initialFine: numberOrZero(fd.get("initialFine")),
@@ -210,7 +210,7 @@
     lines.push("");
 
     lines.push("EVIDENCE REVIEW");
-    lines.push("BWV reviewed by: " + formValues.bwvReviewer + ".");
+    lines.push("Bodycam (BVW) reviewed by: " + formValues.bwvReviewer + ".");
     lines.push("Review notes: " + formValues.evidenceReview);
     lines.push("Action-card evidence checklist:");
     if (evidence.length === 0) {

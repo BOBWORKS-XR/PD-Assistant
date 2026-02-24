@@ -477,7 +477,7 @@
 
   function buildImmediateActions(scene, risk, grounds, contexts) {
     var actions = [];
-    actions.push("Anchor scene facts: exact location, timestamp, subject count, BWV narrative.");
+    actions.push("Anchor scene facts: exact location, timestamp, subject count, Bodycam (BVW) narrative.");
     actions.push("Issue clear commands and de-escalate before force where safe.");
 
     if (grounds.level === "none" || grounds.level === "weak") {
@@ -556,7 +556,7 @@
         {
           method: "Supervisor Review",
           reason: "Document why escalation was blocked and select compliant alternative.",
-          ukReference: "BWV + incident log",
+          ukReference: "Bodycam (BVW) + incident log",
         },
       ];
     }
@@ -761,7 +761,7 @@
       "Exact timeline with location and unit arrival sequence.",
       "Specific behavior quotes/actions (avoid vague language).",
       "Grounds narrative written as observable facts.",
-      "BWV and witness references linked to timeline.",
+      "Bodycam (BVW) and witness references linked to timeline.",
     ];
 
     if (contexts.vehicleContext) {
