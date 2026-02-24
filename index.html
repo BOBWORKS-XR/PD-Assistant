@@ -10,8 +10,17 @@
     <main class="layout">
       <section class="panel">
         <header class="panel-head">
-          <h1>EPICAL PD Assistant</h1>
-          <p class="sub">Dynamic scene workflow and deterministic RP outcomes</p>
+          <div class="panel-head-row">
+            <div>
+              <h1>EPICAL PD Assistant</h1>
+              <p class="sub">Dynamic scene workflow and deterministic RP outcomes</p>
+            </div>
+            <button type="button" id="theme-toggle" class="secondary-btn">Dark Mode</button>
+          </div>
+          <p class="muted">
+            City policy profile: non-motorway limit 50 mph, motorway 100 mph, cannabis <=15g usually confiscation, cash up to GBP
+            10,000 generally acceptable.
+          </p>
         </header>
 
         <form id="scene-form">
@@ -140,6 +149,7 @@
 
             <label><input type="checkbox" name="vehicleAntisocial" /> Vehicle anti-social use (s59 route)</label>
             <label><input type="checkbox" name="priorS59Warning" /> Existing active s59 warning</label>
+            <p class="muted">Traffic lights are usually treated as give-way: full stop if lane is blocked.</p>
           </fieldset>
 
           <fieldset class="dynamic-fieldset" data-show="pursuitContext">
@@ -184,6 +194,15 @@
                 <option value="bulk">Bulk package</option>
               </select>
             </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Property / Cash Context</legend>
+            <label>
+              Seized / Declared Cash (GBP)
+              <input type="number" name="seizedCashGbp" min="0" step="1" value="0" />
+            </label>
+            <p class="muted">City guidance: cash at or below GBP 10,000 is usually acceptable within reason.</p>
           </fieldset>
 
           <fieldset>

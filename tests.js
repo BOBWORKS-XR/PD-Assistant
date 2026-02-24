@@ -27,10 +27,27 @@ const scenarios = [
       roadType: "urban",
       trafficDensity: "medium",
       drugType: "cannabis",
-      drugQuantityGrams: 1.5,
+      drugQuantityGrams: 14.5,
       drugPackaging: "personal",
+      seizedCashGbp: 8500,
       vehicleAntisocial: false,
       priorS59Warning: false,
+    },
+  },
+  {
+    name: "Cash over threshold with drug indicators",
+    input: {
+      location: "Little Seoul",
+      mode: "foot",
+      incidentType: "suspicious_person",
+      behavior: "evasive",
+      pdOnDuty: 6,
+      groupSize: 1,
+      grounds: ["smell_drugs", "admission_made"],
+      drugType: "class_b",
+      drugQuantityGrams: 8,
+      drugPackaging: "split_bags",
+      seizedCashGbp: 18000,
     },
   },
   {
@@ -70,6 +87,7 @@ for (const scenario of scenarios) {
   console.log("Blocked:", result.gate.blocked.length ? result.gate.blocked.join(" | ") : "No");
   console.log("Arrest reasons:", result.arrestReasons.length ? result.arrestReasons.join(" ; ") : "None");
   console.log("Offences:", result.likelyOffences.length ? result.likelyOffences.join(" ; ") : "None");
+  console.log("Speed profile:", result.risk.speedProfile.speedLimit, "limit,", result.risk.speedProfile.overLimit, "over");
   console.log(
     "Disposals:",
     result.disposals

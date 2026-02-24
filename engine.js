@@ -47,6 +47,15 @@
   var PACE_CAUTION_TEXT =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
 
+  var CITY_POLICY = {
+    speedLimitUrbanMph: 50,
+    speedLimitRuralMph: 50,
+    speedLimitMotorwayMph: 100,
+    cannabisConfiscationMaxGrams: 15,
+    cashOkayMaxGbp: 10000,
+    trafficLightsGiveWay: true,
+  };
+
   function uniquePush(list, value) {
     if (list.indexOf(value) === -1) {
       list.push(value);
@@ -61,6 +70,30 @@
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
+  }
+
+  function getSpeedLimitByRoadType(roadType) {
+    if (roadType === "motorway") return CITY_POLICY.speedLimitMotorwayMph;
+    if (roadType === "rural") return CITY_POLICY.speedLimitRuralMph;
+    return CITY_POLICY.speedLimitUrbanMph;
+  }
+
+  function computeSpeedProfile(scene) {
+    var speedLimit = getSpeedLimitByRoadType(scene.roadType);
+    var overLimit = Math.max(0, scene.speedMph - speedLimit);
+    return {
+      speedLimit: speedLimit,
+      overLimit: overLimit,
+    };
+  }
+
+  function hasSupplyIndicators(scene) {
+    if (scene.drugPackaging === "dealer_pack" || scene.drugPackaging === "bulk") return true;
+    if (scene.drugType === "cannabis") return scene.drugQuantityGrams > CITY_POLICY.cannabisConfiscationMaxGrams;
+    if (scene.drugType === "class_a" || scene.drugType === "class_b" || scene.drugType === "unknown") {
+      return scene.drugQuantityGrams > 10;
+    }
+    return false;
   }
 
   function formatLocalTimestamp() {
@@ -100,6 +133,7 @@
         drugType: "unknown",
         drugQuantityGrams: 0,
         drugPackaging: "none",
+        seizedCashGbp: 0,
         amberZone: false,
         sceneStartedInAmber: false,
         medicalAttemptDuringActive: false,
@@ -116,6 +150,7 @@
     scene.pursuitDurationMin = clamp(toNumber(scene.pursuitDurationMin, 0), 0, 120);
     scene.failedStopSignals = clamp(Math.floor(toNumber(scene.failedStopSignals, 0)), 0, 20);
     scene.drugQuantityGrams = clamp(toNumber(scene.drugQuantityGrams, 0), 0, 100000);
+    scene.seizedCashGbp = clamp(toNumber(scene.seizedCashGbp, 0), 0, 100000000);
 
     if (!Array.isArray(scene.grounds)) {
       scene.grounds = [];
@@ -200,6 +235,7 @@
   function calculateRisk(scene, contexts) {
     var score = 0;
     var factors = [];
+    var speedProfile = computeSpeedProfile(scene);
 
     function add(points, label) {
       if (points <= 0) return;
@@ -224,14 +260,14 @@
     if (contexts.vehicleContext) {
       add(TRAFFIC_DENSITY_WEIGHT[scene.trafficDensity] || 0, "Traffic density");
 
-      if (scene.speedMph >= 140) add(8, "Extreme speed");
-      else if (scene.speedMph >= 110) add(6, "Very high speed");
-      else if (scene.speedMph >= 90) add(4, "High speed");
-      else if (scene.speedMph >= 70) add(2, "Elevated speed");
+      if (speedProfile.overLimit >= 60) add(8, "Extreme speed over city limit");
+      else if (speedProfile.overLimit >= 40) add(6, "Very high speed over city limit");
+      else if (speedProfile.overLimit >= 25) add(4, "High speed over city limit");
+      else if (speedProfile.overLimit >= 10) add(2, "Elevated speed over city limit");
 
-      if (scene.roadType === "urban" && scene.speedMph >= 80) add(4, "Urban speed danger");
-      if (scene.roadType === "rural" && scene.speedMph >= 90) add(2, "Rural speed danger");
-      if (scene.roadType === "motorway" && scene.speedMph >= 100) add(1, "Motorway speed pressure");
+      if (scene.roadType === "urban" && speedProfile.overLimit >= 20) add(4, "Urban speed danger");
+      if (scene.roadType === "rural" && speedProfile.overLimit >= 20) add(2, "Rural speed danger");
+      if (scene.roadType === "motorway" && speedProfile.overLimit >= 10) add(1, "Motorway speed pressure");
 
       if (scene.vehicleCondition === "smoking") add(1, "Vehicle damage");
       if (scene.vehicleCondition === "blown_tires") add(3, "Blown tires");
@@ -250,7 +286,7 @@
         add(Math.min(4, Math.ceil(scene.failedStopSignals / 2)), "Repeated stop signal refusal");
       }
 
-      if (scene.pursuitDurationMin >= 20 && scene.speedMph >= 90) {
+      if (scene.pursuitDurationMin >= 20 && speedProfile.overLimit >= 20) {
         add(3, "Extended high-speed pursuit risk");
       }
     }
@@ -270,6 +306,11 @@
       if (scene.drugPackaging === "bulk") add(4, "Bulk packaging");
     }
 
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
+      if (scene.seizedCashGbp > 25000) add(4, "Large cash amount beyond city tolerance");
+      else add(2, "Cash above city baseline threshold");
+    }
+
     factors.sort(function (a, b) {
       return b.points - a.points;
     });
@@ -279,12 +320,13 @@
     else if (score >= 12) level = "high";
     else if (score >= 6) level = "medium";
 
-    return { score: score, level: level, factors: factors };
+    return { score: score, level: level, factors: factors, speedProfile: speedProfile };
   }
 
   function gateServerRules(scene, contexts) {
     var blocked = [];
     var warnings = [];
+    var speedProfile = computeSpeedProfile(scene);
 
     if (scene.incidentType === "hostage" && scene.pdOnDuty < 4) {
       blocked.push("Hostage scene blocked: EPICAL requires at least 4 PD on duty.");
@@ -308,8 +350,17 @@
     if (contexts.pursuitContext && scene.pursuitDurationMin >= 25) {
       warnings.push("Pursuit duration is very long; avoid looped chase RP and force progression.");
     }
-    if (contexts.vehicleContext && scene.roadType === "urban" && scene.speedMph >= 100) {
-      warnings.push("Urban speed is extreme; review proportionality and public risk immediately.");
+    if (contexts.vehicleContext && speedProfile.overLimit >= 20) {
+      warnings.push(
+        "Speed is " +
+          speedProfile.overLimit +
+          " mph over local limit (" +
+          speedProfile.speedLimit +
+          " mph) - review proportionality and public risk."
+      );
+    }
+    if (contexts.vehicleContext && CITY_POLICY.trafficLightsGiveWay) {
+      warnings.push("Traffic lights are treated as give-way in city policy; still stop if lane is not clear.");
     }
 
     return { blocked: blocked, warnings: warnings };
@@ -317,6 +368,7 @@
 
   function buildArrestReasons(scene, risk, grounds, contexts) {
     var reasons = [];
+    var speedProfile = computeSpeedProfile(scene);
 
     if (scene.behavior === "fleeing") reasons.push("Subject actively fleeing");
     if (scene.behavior === "aggressive") reasons.push("Aggressive threat behavior");
@@ -324,9 +376,14 @@
     if (scene.weaponSeen) reasons.push("Weapon visible on subject");
     if (scene.grounds.indexOf("stolen_vehicle_marker") !== -1) reasons.push("Vehicle flagged as potentially stolen");
     if (contexts.pursuitContext && scene.failedStopSignals >= 2) reasons.push("Repeated refusal to stop for police");
-    if (contexts.pursuitContext && scene.speedMph >= 90) reasons.push("Dangerous pursuit driving threshold met");
-    if (grounds.drugGrounded && (scene.drugQuantityGrams > 10 || scene.drugPackaging === "dealer_pack" || scene.drugPackaging === "bulk")) {
+    if (contexts.pursuitContext && speedProfile.overLimit >= 20) {
+      reasons.push("Dangerous pursuit driving threshold met (" + speedProfile.overLimit + " mph over limit)");
+    }
+    if (grounds.drugGrounded && hasSupplyIndicators(scene)) {
       reasons.push("Drug supply indicators present");
+    }
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
+      reasons.push("Cash amount exceeds city baseline tolerance of GBP " + CITY_POLICY.cashOkayMaxGbp);
     }
     if (risk.level === "critical") reasons.push("Critical threat level requiring secure containment");
 
@@ -335,6 +392,7 @@
 
   function selectLegalSections(scene, grounds, contexts, arrestReasons) {
     var sections = [];
+    var speedProfile = computeSpeedProfile(scene);
 
     if (contexts.vehicleContext) {
       uniquePush(sections, "RTA s163 - Power to stop vehicle");
@@ -359,13 +417,17 @@
 
     if (
       contexts.vehicleContext &&
-      (scene.vehicleAntisocial || scene.priorS59Warning || (scene.roadType !== "motorway" && scene.speedMph >= 90))
+      (scene.vehicleAntisocial || scene.priorS59Warning || speedProfile.overLimit >= 20)
     ) {
       uniquePush(sections, "Police Reform Act s59 - Vehicle warning/seizure route");
     }
 
-    if (contexts.vehicleContext && scene.speedMph >= 90) {
+    if (contexts.vehicleContext && speedProfile.overLimit >= 20) {
       uniquePush(sections, "RTA s2 - Dangerous driving reference");
+    }
+
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
+      uniquePush(sections, "POCA 2002 - Cash seizure / criminal property enquiry path");
     }
 
     if (arrestReasons.length > 0) {
@@ -378,13 +440,16 @@
 
   function buildLikelyOffences(scene, grounds, contexts) {
     var offences = [];
+    var speedProfile = computeSpeedProfile(scene);
 
     if (scene.weaponSeen || scene.incidentType === "weapon_sighting") {
       offences.push("Possession of offensive weapon / bladed article (context dependent)");
     }
 
-    if (contexts.vehicleContext && scene.speedMph >= 90) {
+    if (contexts.vehicleContext && speedProfile.overLimit >= 20) {
       offences.push("Dangerous driving / careless driving (speed + road conditions dependent)");
+    } else if (contexts.vehicleContext && speedProfile.overLimit > 0) {
+      offences.push("Speeding over local limit");
     }
 
     if (contexts.pursuitContext && scene.failedStopSignals >= 1) {
@@ -392,11 +457,15 @@
     }
 
     if (grounds.drugGrounded) {
-      if (scene.drugQuantityGrams > 10 || scene.drugPackaging === "dealer_pack" || scene.drugPackaging === "bulk") {
+      if (hasSupplyIndicators(scene)) {
         offences.push("Possession with intent to supply (drug indicators present)");
       } else {
         offences.push("Simple possession of controlled substance");
       }
+    }
+
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
+      offences.push("Potential criminal property / unexplained cash above city tolerance");
     }
 
     if (scene.activeShots) {
@@ -432,14 +501,18 @@
     if (contexts.drugContext && grounds.drugGrounded) {
       actions.push("Secure drugs evidence chain: quantity estimate, packaging, location found.");
     }
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
+      actions.push("Document cash source-of-funds account and preserve seizure continuity.");
+    }
 
     return actions;
   }
 
   function buildTacticalActions(scene, risk, contexts) {
     var tactical = [];
+    var speedProfile = computeSpeedProfile(scene);
 
-    if (contexts.vehicleContext && scene.speedMph >= 90) {
+    if (contexts.vehicleContext && speedProfile.overLimit >= 20) {
       tactical.push("Use advanced units/interceptors and avoid solo high-speed interventions.");
     }
     if (contexts.vehicleContext && scene.trafficDensity === "high") {
@@ -463,6 +536,16 @@
   }
 
   function buildDisposals(scene, risk, grounds, contexts, arrestReasons, blockedCount) {
+    var speedProfile = computeSpeedProfile(scene);
+    var lowRiskCannabis =
+      scene.drugType === "cannabis" &&
+      scene.drugQuantityGrams > 0 &&
+      scene.drugQuantityGrams <= CITY_POLICY.cannabisConfiscationMaxGrams &&
+      (scene.drugPackaging === "none" || scene.drugPackaging === "personal") &&
+      scene.behavior === "compliant" &&
+      !scene.weaponSeen &&
+      !scene.activeShots;
+
     if (blockedCount > 0) {
       return [
         {
@@ -478,6 +561,24 @@
       ];
     }
 
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp && (risk.level === "high" || risk.level === "critical")) {
+      return [
+        {
+          method: "Cash Seizure + Arrest/Detain Decision",
+          reason:
+            "Cash above GBP " +
+            CITY_POLICY.cashOkayMaxGbp +
+            " with elevated threat profile requires criminal property enquiries.",
+          ukReference: "POCA 2002 + PACE s24 (if necessity met)",
+        },
+        {
+          method: "Financial Enquiry Referral",
+          reason: "Record source-of-funds account and preserve evidence continuity.",
+          ukReference: "Financial investigation workflow",
+        },
+      ];
+    }
+
     if (arrestReasons.length >= 2 || risk.level === "critical") {
       return [
         {
@@ -489,6 +590,24 @@
           method: "Charge / Remand Decision Pack",
           reason: "High-risk evidential package required before disposal.",
           ukReference: "Custody + CPS-style RP workflow",
+        },
+      ];
+    }
+
+    if (lowRiskCannabis) {
+      return [
+        {
+          method: "Cannabis Confiscation (<=15g)",
+          reason:
+            "City policy: cannabis at or under " +
+            CITY_POLICY.cannabisConfiscationMaxGrams +
+            "g is typically confiscated when no aggravating factors are present.",
+          ukReference: "MDA s23 + city disposal standard",
+        },
+        {
+          method: "Street Resolution / Monetary Penalty",
+          reason: "Use proportionate fine route where appropriate, with no custody sentence by default.",
+          ukReference: "Local discretion policy",
         },
       ];
     }
@@ -514,7 +633,7 @@
           },
         ];
       }
-      if (scene.drugQuantityGrams > 10 || scene.drugPackaging === "dealer_pack" || scene.drugPackaging === "bulk") {
+      if (hasSupplyIndicators(scene)) {
         return [
           {
             method: "Arrest for Supply Investigation",
@@ -571,11 +690,16 @@
           },
         ];
       }
-      if (scene.speedMph >= 90 && scene.roadType !== "motorway") {
+      if (speedProfile.overLimit >= 20) {
         return [
           {
             method: "Traffic Offence Report / Summons",
-            reason: "Non-motorway excessive speed with high public risk indicators.",
+            reason:
+              "Speed is " +
+              speedProfile.overLimit +
+              " mph above local limit (" +
+              speedProfile.speedLimit +
+              " mph), with public risk indicators.",
             ukReference: "RTA s2 reference",
           },
           {
@@ -596,7 +720,8 @@
         },
         {
           method: "Words of Advice",
-          reason: "Proportionate educational outcome for minor concern only.",
+          reason:
+            "Proportionate educational outcome for minor concern only. Traffic lights are treated as give-way when lane is clear.",
           ukReference: "Officer discretion",
         },
       ];
@@ -649,17 +774,43 @@
     if (contexts.drugContext && grounds.drugGrounded) {
       evidence.push("Drug details: type estimate, quantity (g), packaging, recovery location.");
     }
+    if (scene.seizedCashGbp > 0) {
+      evidence.push("Cash handling: amount (GBP), source explanation, seizure/return decision log.");
+    }
     if (scene.taserHitTwo) {
       evidence.push("Taser cycle count and post-deployment subject state.");
     }
     return evidence;
   }
 
-  function buildRationale(risk, grounds) {
+  function buildRationale(scene, risk, grounds) {
     var notes = [];
+    var speedProfile = risk.speedProfile || computeSpeedProfile(scene);
     notes.push("Server rule gates are applied before tactical or legal suggestions.");
     notes.push("Risk classification is score-based and deterministic (no AI dependency).");
     notes.push(grounds.summary);
+    notes.push(
+      "City policy active: " +
+        CITY_POLICY.speedLimitUrbanMph +
+        " mph non-motorway, " +
+        CITY_POLICY.speedLimitMotorwayMph +
+        " mph motorway, cannabis <= " +
+        CITY_POLICY.cannabisConfiscationMaxGrams +
+        "g confiscation default, cash baseline GBP " +
+        CITY_POLICY.cashOkayMaxGbp +
+        "."
+    );
+    if (scene.mode === "vehicle" || scene.incidentType === "traffic_stop" || scene.incidentType === "pursuit") {
+      notes.push(
+        "Recorded speed check: " +
+          scene.speedMph +
+          " mph vs local limit " +
+          speedProfile.speedLimit +
+          " mph (+" +
+          speedProfile.overLimit +
+          ")."
+      );
+    }
     if (risk.factors.length > 0) {
       notes.push("Top risk driver: " + risk.factors[0].label + " (+" + risk.factors[0].points + ").");
     }
@@ -681,7 +832,7 @@
     var tacticalActions = buildTacticalActions(scene, risk, contexts);
     var disposals = buildDisposals(scene, risk, grounds, contexts, arrestReasons, gate.blocked.length);
     var evidence = buildEvidenceChecklist(scene, contexts, grounds);
-    var rationale = buildRationale(risk, grounds);
+    var rationale = buildRationale(scene, risk, grounds);
 
     return {
       log: log,
@@ -692,6 +843,7 @@
       gate: gate,
       arrestReasons: arrestReasons,
       likelyOffences: likelyOffences,
+      cityPolicy: CITY_POLICY,
       cautionText: PACE_CAUTION_TEXT,
       sections: sections,
       immediateActions: immediateActions,

@@ -2,6 +2,7 @@
   var form = document.getElementById("scene-form");
   var result = document.getElementById("result");
   var contextStrip = document.getElementById("context-strip");
+  var themeToggle = document.getElementById("theme-toggle");
 
   function getCheckboxValues(formEl, name) {
     return Array.prototype.slice
@@ -39,6 +40,7 @@
       drugType: formData.get("drugType") || "unknown",
       drugQuantityGrams: Number(formData.get("drugQuantityGrams") || 0),
       drugPackaging: formData.get("drugPackaging") || "none",
+      seizedCashGbp: Number(formData.get("seizedCashGbp") || 0),
       amberZone: formData.get("amberZone") === "on",
       sceneStartedInAmber: formData.get("sceneStartedInAmber") === "on",
       medicalAttemptDuringActive: formData.get("medicalAttemptDuringActive") === "on",
@@ -105,6 +107,7 @@
     if (contexts.drugContext) chips.push("Drug context");
     if (scene.s60Authorized) chips.push("s60 active");
     if (scene.vehicleAntisocial) chips.push("s59 consideration");
+    if (scene.seizedCashGbp > 10000) chips.push("Cash over GBP 10k");
 
     contextStrip.innerHTML = chips
       .map(function (chip) {
@@ -196,6 +199,11 @@
       "<p><strong>Location:</strong> " +
       (data.scene.location || "Unknown") +
       "</p>" +
+      "<p><strong>City Limits:</strong> 50 mph non-motorway, 100 mph motorway | <strong>Current Speed:</strong> " +
+      data.scene.speedMph +
+      " mph (" +
+      data.risk.speedProfile.overLimit +
+      " over local limit)</p>" +
       blockedHtml +
       warningHtml +
       renderRiskDrivers(data.risk.factors) +
@@ -223,6 +231,26 @@
     render(output);
   }
 
+  function applyTheme(theme) {
+    document.body.classList.toggle("theme-dark", theme === "dark");
+    if (themeToggle) {
+      themeToggle.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+    }
+  }
+
+  function initTheme() {
+    var saved = localStorage.getItem("epical_pd_theme");
+    var theme = saved === "dark" ? "dark" : "light";
+    applyTheme(theme);
+  }
+
+  function toggleTheme() {
+    var current = document.body.classList.contains("theme-dark") ? "dark" : "light";
+    var next = current === "dark" ? "light" : "dark";
+    localStorage.setItem("epical_pd_theme", next);
+    applyTheme(next);
+  }
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     evaluateAndRender();
@@ -236,5 +264,10 @@
     evaluateAndRender();
   });
 
+  if (themeToggle) {
+    themeToggle.addEventListener("click", toggleTheme);
+  }
+
+  initTheme();
   evaluateAndRender();
 })();

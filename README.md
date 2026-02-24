@@ -9,9 +9,11 @@ Rule-based UK-policing RP assistant for FiveM (no API key required).
   - `Pursuit Metrics`
   - `Drug Intelligence`
 - Expanded risk factors:
-  - Speed, road type, traffic density
+  - Speed against city limits (50 non-motorway, 100 motorway)
+  - Road type, traffic density
   - Pursuit duration, failed stop signals
   - Drug quantity and packaging profile
+  - Cash amount vs city tolerance threshold (GBP 10,000)
   - Subject violence/intoxication flags
 - Structured outputs:
   - Specific disposal methods with reasons + UK references
@@ -19,9 +21,15 @@ Rule-based UK-policing RP assistant for FiveM (no API key required).
   - Likely offences
   - PACE caution text
   - Local timestamp logging (`en-GB` style)
+- City policy routes:
+  - Cannabis <=15g defaults to confiscation/street resolution when no aggravating factors
+  - Cash <=GBP 10,000 treated as generally acceptable unless other indicators escalate
+  - Traffic lights treated as give-way reminder included
 - New continuation workflow:
   - `investigations.html` handover page fed from latest action card via `localStorage`
-  - Generates a UK-style investigation log for follow-on roleplay
+  - Generates a city-computer arrest record format with initial/final outcome and authorization lines
+- UI:
+  - Dark mode with persistent local preference across pages
 
 ## Run locally
 

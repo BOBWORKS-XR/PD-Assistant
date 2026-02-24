@@ -5,12 +5,43 @@
   --muted: #445467;
   --line: #c7d5e7;
   --panel: #ffffff;
+  --field-bg: #ffffff;
   --blue: #0a61d0;
   --blue-strong: #0549a0;
+  --secondary-bg: #ebf2fc;
+  --secondary-ink: #18395f;
+  --secondary-line: #c6d9f3;
   --warning-bg: #fff2d8;
   --warning-ink: #7d5900;
   --danger-bg: #ffe4e4;
   --danger-ink: #6a1010;
+  --context-bg: #e8f0fb;
+  --context-ink: #0f488f;
+  --context-line: #c7daf5;
+  --info-bg: #f7fbff;
+}
+
+body.theme-dark {
+  --bg-a: #10151f;
+  --bg-b: #1a2433;
+  --ink: #e6edf7;
+  --muted: #afbdd1;
+  --line: #31435b;
+  --panel: #162131;
+  --field-bg: #101a28;
+  --blue: #3f8cff;
+  --blue-strong: #2d73e0;
+  --secondary-bg: #1c2a3d;
+  --secondary-ink: #dbe8ff;
+  --secondary-line: #3f5a7b;
+  --warning-bg: #3b3221;
+  --warning-ink: #f3d79b;
+  --danger-bg: #422424;
+  --danger-ink: #f3bbbb;
+  --context-bg: #1f2f45;
+  --context-ink: #b8d4ff;
+  --context-line: #35557d;
+  --info-bg: #192739;
 }
 
 * {
@@ -50,6 +81,13 @@ body {
   margin-bottom: 12px;
 }
 
+.panel-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 h1,
 h2,
 h3 {
@@ -67,7 +105,7 @@ form {
 }
 
 fieldset {
-  border: 1px solid #d6e1ef;
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px;
   display: grid;
@@ -78,7 +116,7 @@ fieldset {
 legend {
   padding: 0 6px;
   font-weight: 700;
-  color: #1b3550;
+  color: var(--ink);
 }
 
 label {
@@ -96,10 +134,12 @@ input,
 select,
 textarea,
 button {
-  border: 1px solid #c4d4e8;
+  border: 1px solid var(--line);
   border-radius: 8px;
   font-size: 14px;
   padding: 9px;
+  color: var(--ink);
+  background: var(--field-bg);
 }
 
 textarea {
@@ -112,6 +152,14 @@ button {
   font-weight: 700;
   background: linear-gradient(120deg, var(--blue) 0%, var(--blue-strong) 100%);
   cursor: pointer;
+}
+
+.secondary-btn {
+  border: 1px solid var(--secondary-line);
+  color: var(--secondary-ink);
+  background: var(--secondary-bg);
+  font-weight: 700;
+  min-width: 108px;
 }
 
 button:hover {
@@ -140,9 +188,9 @@ button:hover {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  background: #e8f0fb;
-  color: #0f488f;
-  border: 1px solid #c7daf5;
+  background: var(--context-bg);
+  color: var(--context-ink);
+  border: 1px solid var(--context-line);
 }
 
 .metric {
@@ -186,10 +234,10 @@ button:hover {
 }
 
 .info-card {
-  border: 1px solid #d6e1ef;
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px;
-  background: #f7fbff;
+  background: var(--info-bg);
 }
 
 .block {
@@ -217,6 +265,15 @@ ul {
 
 .muted {
   color: var(--muted);
+}
+
+code {
+  display: block;
+  background: var(--field-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  white-space: normal;
 }
 
 @media (max-width: 1024px) {
