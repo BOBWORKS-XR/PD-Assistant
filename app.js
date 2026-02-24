@@ -35,6 +35,7 @@
       vehicleCondition: formData.get("vehicleCondition") || "normal",
       vehicleAntisocial: formData.get("vehicleAntisocial") === "on",
       priorS59Warning: formData.get("priorS59Warning") === "on",
+      vehiclePulledOver: formData.get("vehiclePulledOver") === "on",
       pursuitDurationMin: Number(formData.get("pursuitDurationMin") || 0),
       failedStopSignals: Number(formData.get("failedStopSignals") || 0),
       drugType: formData.get("drugType") || "unknown",
@@ -46,6 +47,8 @@
       noFixedAddress: formData.get("noFixedAddress") === "on",
       obstructiveConduct: formData.get("obstructiveConduct") === "on",
       refusesVehicleDocs: formData.get("refusesVehicleDocs") === "on",
+      faceCoveringPresent: formData.get("faceCoveringPresent") === "on",
+      refusesRemoveFaceCovering: formData.get("refusesRemoveFaceCovering") === "on",
       amberZone: formData.get("amberZone") === "on",
       sceneStartedInAmber: formData.get("sceneStartedInAmber") === "on",
       medicalAttemptDuringActive: formData.get("medicalAttemptDuringActive") === "on",
@@ -138,6 +141,15 @@
       '<p class="quick-item"><strong>Priority Alert:</strong> ' +
       ref.priorityAlert +
       "</p>" +
+      '<p class="quick-item"><strong>ID Expectation:</strong> ' +
+      ref.idExpectation +
+      "</p>" +
+      '<p class="quick-item"><strong>Vehicle Stop Status:</strong> ' +
+      ref.vehicleStopStatus +
+      "</p>" +
+      '<p class="quick-item"><strong>Face Covering:</strong> ' +
+      ref.faceCovering +
+      "</p>" +
       "</div>" +
       "</div>"
     );
@@ -175,12 +187,15 @@
     if (contexts.drugContext) chips.push("Drug context");
     if (scene.s60Authorized) chips.push("s60 active");
     if (scene.vehicleAntisocial) chips.push("s59 consideration");
+    if (scene.vehiclePulledOver) chips.push("Vehicle stop active");
     if (scene.seizedCashGbp > 10000) chips.push("Cash over GBP 10k");
     if (scene.refusesProvideId) chips.push("ID refusal");
     if (scene.suspectedFalseIdentity) chips.push("False identity risk");
     if (scene.obstructiveConduct) chips.push("Obstruction risk");
     if (scene.noFixedAddress) chips.push("No fixed address");
     if (scene.refusesVehicleDocs) chips.push("Docs refusal");
+    if (scene.faceCoveringPresent) chips.push("Face covering present");
+    if (scene.refusesRemoveFaceCovering) chips.push("Face-covering removal refused");
 
     contextStrip.innerHTML = chips
       .map(function (chip) {

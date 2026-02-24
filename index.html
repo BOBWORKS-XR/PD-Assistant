@@ -105,7 +105,13 @@
             <label><input type="checkbox" name="noFixedAddress" /> No fixed or verifiable address</label>
             <label><input type="checkbox" name="obstructiveConduct" /> Obstructive or persistent non-compliance</label>
             <label><input type="checkbox" name="refusesVehicleDocs" /> Refuses vehicle docs/details request</label>
-            <p class="muted">These factors can trigger PACE necessity grounds and should be documented clearly.</p>
+            <label><input type="checkbox" name="faceCoveringPresent" /> Face covering present</label>
+            <label><input type="checkbox" name="refusesRemoveFaceCovering" /> Refuses to remove face covering when requested</label>
+            <p class="muted">
+              UK context: there is no general duty to provide ID on foot. ID/docs duties are stronger in lawful vehicle-stop context
+              and offence-linked necessity decisions. Face-covering removal usually needs specific lawful power (for example s60AA
+              authorised context).
+            </p>
           </fieldset>
 
           <fieldset>
@@ -159,6 +165,7 @@
 
             <label><input type="checkbox" name="vehicleAntisocial" /> Vehicle anti-social use (s59 route)</label>
             <label><input type="checkbox" name="priorS59Warning" /> Existing active s59 warning</label>
+            <label><input type="checkbox" name="vehiclePulledOver" /> Vehicle has been lawfully pulled over / stop completed</label>
             <p class="muted">Traffic lights are usually treated as give-way: full stop if lane is blocked.</p>
           </fieldset>
 

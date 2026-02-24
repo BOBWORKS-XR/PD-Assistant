@@ -128,6 +128,7 @@
         vehicleCondition: "normal",
         vehicleAntisocial: false,
         priorS59Warning: false,
+        vehiclePulledOver: false,
         pursuitDurationMin: 0,
         failedStopSignals: 0,
         drugType: "unknown",
@@ -139,6 +140,8 @@
         noFixedAddress: false,
         obstructiveConduct: false,
         refusesVehicleDocs: false,
+        faceCoveringPresent: false,
+        refusesRemoveFaceCovering: false,
         amberZone: false,
         sceneStartedInAmber: false,
         medicalAttemptDuringActive: false,
@@ -179,6 +182,53 @@
       vehicleContext: vehicleContext,
       pursuitContext: pursuitContext,
       drugContext: drugContext,
+    };
+  }
+
+  function assessIdentityExpectation(scene, contexts, grounds) {
+    var speedProfile = computeSpeedProfile(scene);
+    var activeVehicleStop =
+      contexts.vehicleContext &&
+      (scene.vehiclePulledOver ||
+        scene.incidentType === "traffic_stop" ||
+        scene.incidentType === "pursuit" ||
+        scene.failedStopSignals > 0 ||
+        speedProfile.overLimit > 0);
+    var offenceSuspicion =
+      grounds.level !== "none" ||
+      scene.weaponSeen ||
+      scene.activeShots ||
+      scene.behavior === "fleeing" ||
+      scene.behavior === "aggressive" ||
+      (contexts.vehicleContext &&
+        (speedProfile.overLimit > 0 || scene.failedStopSignals > 0 || scene.vehicleAntisocial || (scene.refusesVehicleDocs && activeVehicleStop))) ||
+      (contexts.drugContext && (scene.drugQuantityGrams > 0 || scene.drugPackaging !== "none" || contexts.hasDrugGround)) ||
+      scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp;
+
+    var idIsRequired = false;
+    var idBasis = "No general power to compel ID in this context.";
+
+    if (activeVehicleStop) {
+      idIsRequired = true;
+      idBasis = "RTA s164/s165 may require driver/vehicle identity details.";
+    } else if (contexts.vehicleContext) {
+      idBasis = "Vehicle context present, but ID/docs compulsion is strongest once lawful stop context is active.";
+    } else if (offenceSuspicion) {
+      idBasis = "No general foot-ID duty, but refusal may support PACE s24 necessity where identity/address cannot be ascertained.";
+    }
+
+    var faceCoveringPowerActive = scene.s60Authorized === true;
+    var faceCoveringBasis = faceCoveringPowerActive
+      ? "CJPOA s60AA route may allow face-covering removal in authorised area."
+      : "Face-covering removal normally requires specific lawful power (for example authorised s60AA context).";
+
+    return {
+      offenceSuspicion: offenceSuspicion,
+      idIsRequired: idIsRequired,
+      idBasis: idBasis,
+      activeVehicleStop: activeVehicleStop,
+      faceCoveringPowerActive: faceCoveringPowerActive,
+      faceCoveringBasis: faceCoveringBasis,
     };
   }
 
@@ -237,7 +287,7 @@
     };
   }
 
-  function calculateRisk(scene, contexts) {
+  function calculateRisk(scene, contexts, identityContext) {
     var score = 0;
     var factors = [];
     var speedProfile = computeSpeedProfile(scene);
@@ -261,10 +311,18 @@
     if (scene.knownViolenceMarker) add(3, "Known violence marker");
     if (scene.subjectIntoxicated) add(2, "Intoxication risk");
     if (scene.injuryPresent) add(2, "Injury in scene");
-    if (scene.refusesProvideId) add(2, "Identity refusal");
-    if (scene.suspectedFalseIdentity) add(3, "Suspected false identity");
-    if (scene.noFixedAddress) add(1, "No fixed/verifiable address");
-    if (scene.obstructiveConduct) add(2, "Obstructive conduct");
+    if (scene.refusesProvideId && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
+      add(2, "Identity refusal");
+    }
+    if (scene.suspectedFalseIdentity && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
+      add(3, "Suspected false identity");
+    }
+    if (scene.noFixedAddress && identityContext.offenceSuspicion) {
+      add(1, "No fixed/verifiable address");
+    }
+    if (scene.obstructiveConduct && identityContext.offenceSuspicion) {
+      add(2, "Obstructive conduct");
+    }
 
     if (contexts.vehicleContext) {
       add(TRAFFIC_DENSITY_WEIGHT[scene.trafficDensity] || 0, "Traffic density");
@@ -284,7 +342,9 @@
 
       if (scene.vehicleAntisocial) add(3, "Anti-social vehicle use");
       if (scene.priorS59Warning) add(2, "Prior s59 warning");
-      if (scene.refusesVehicleDocs) add(2, "Refusal to provide vehicle docs/details");
+      if (scene.refusesVehicleDocs && identityContext.activeVehicleStop) {
+        add(2, "Refusal to provide vehicle docs/details");
+      }
     }
 
     if (contexts.pursuitContext) {
@@ -321,6 +381,10 @@
       else add(2, "Cash above city baseline threshold");
     }
 
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && identityContext.faceCoveringPowerActive) {
+      add(2, "Refusal to remove face covering under authorised power");
+    }
+
     factors.sort(function (a, b) {
       return b.points - a.points;
     });
@@ -333,7 +397,7 @@
     return { score: score, level: level, factors: factors, speedProfile: speedProfile };
   }
 
-  function gateServerRules(scene, contexts) {
+  function gateServerRules(scene, contexts, identityContext) {
     var blocked = [];
     var warnings = [];
     var speedProfile = computeSpeedProfile(scene);
@@ -372,17 +436,36 @@
     if (contexts.vehicleContext && CITY_POLICY.trafficLightsGiveWay) {
       warnings.push("Traffic lights are treated as give-way in city policy; still stop if lane is not clear.");
     }
+    if (scene.refusesVehicleDocs && !identityContext.activeVehicleStop) {
+      warnings.push("Vehicle-doc refusal should only be treated as non-compliance after a lawful stop/request context is established.");
+    }
+    if (scene.refusesVehicleDocs && identityContext.activeVehicleStop) {
+      warnings.push("Vehicle-doc refusal is active within lawful stop context; record exact request and response.");
+    }
     if (scene.refusesProvideId) {
-      warnings.push("ID refusal flagged: record exact wording of request and refusal.");
+      if (identityContext.idIsRequired || identityContext.offenceSuspicion) {
+        warnings.push("ID refusal flagged: record exact wording of request and refusal.");
+      } else {
+        warnings.push("No general legal duty to provide ID in this context; do not escalate solely for refusal.");
+      }
     }
     if (scene.suspectedFalseIdentity) {
       warnings.push("Possible false details: verify identity before final disposal decision.");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && !identityContext.faceCoveringPowerActive) {
+      warnings.push("Face covering removal cannot usually be compelled here without specific lawful power.");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && identityContext.faceCoveringPowerActive) {
+      warnings.push("Face covering refusal in authorised area may justify enforcement (s60AA context).");
+    }
+    if (!scene.faceCoveringPresent && scene.refusesRemoveFaceCovering) {
+      warnings.push("Face-covering refusal flag is set but no face covering is recorded.");
     }
 
     return { blocked: blocked, warnings: warnings };
   }
 
-  function buildArrestReasons(scene, risk, grounds, contexts) {
+  function buildArrestReasons(scene, risk, grounds, contexts, identityContext) {
     var reasons = [];
     var speedProfile = computeSpeedProfile(scene);
 
@@ -390,14 +473,27 @@
     if (scene.behavior === "aggressive") reasons.push("Aggressive threat behavior");
     if (scene.activeShots) reasons.push("Active firearms discharge risk");
     if (scene.weaponSeen) reasons.push("Weapon visible on subject");
-    if (scene.refusesProvideId) reasons.push("Necessity to ascertain name/address (PACE s24(5)(a))");
-    if (scene.noFixedAddress) reasons.push("Address cannot be promptly verified (PACE s24(5)(a))");
-    if (scene.suspectedFalseIdentity) reasons.push("Identity details believed false; prevent disappearance (PACE s24(5)(b))");
-    if (scene.obstructiveConduct) reasons.push("Obstructive conduct affecting prompt/effective investigation (PACE s24(5)(e))");
+    if (scene.refusesProvideId && identityContext.idIsRequired) {
+      reasons.push("Refused identity/details where lawfully required (" + identityContext.idBasis + ")");
+    } else if (scene.refusesProvideId && identityContext.offenceSuspicion) {
+      reasons.push("Necessity to ascertain name/address (PACE s24(5)(a))");
+    }
+    if (scene.noFixedAddress && identityContext.offenceSuspicion) {
+      reasons.push("Address cannot be promptly verified (PACE s24(5)(a))");
+    }
+    if (scene.suspectedFalseIdentity && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
+      reasons.push("Identity details believed false; prevent disappearance (PACE s24(5)(b))");
+    }
+    if (scene.obstructiveConduct && identityContext.offenceSuspicion) {
+      reasons.push("Obstructive conduct affecting prompt/effective investigation (PACE s24(5)(e))");
+    }
     if (scene.grounds.indexOf("stolen_vehicle_marker") !== -1) reasons.push("Vehicle flagged as potentially stolen");
     if (contexts.pursuitContext && scene.failedStopSignals >= 2) reasons.push("Repeated refusal to stop for police");
-    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+    if (contexts.vehicleContext && scene.refusesVehicleDocs && identityContext.activeVehicleStop) {
       reasons.push("Vehicle docs/details refused after lawful request (PACE s24(5)(e))");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && identityContext.faceCoveringPowerActive) {
+      reasons.push("Refused face-covering removal under authorised power (s60AA context)");
     }
     if (contexts.pursuitContext && speedProfile.overLimit >= 20) {
       reasons.push("Dangerous pursuit driving threshold met (" + speedProfile.overLimit + " mph over limit)");
@@ -413,14 +509,16 @@
     return reasons;
   }
 
-  function selectLegalSections(scene, grounds, contexts, arrestReasons) {
+  function selectLegalSections(scene, grounds, contexts, arrestReasons, identityContext) {
     var sections = [];
     var speedProfile = computeSpeedProfile(scene);
 
     if (contexts.vehicleContext) {
       uniquePush(sections, "RTA s163 - Power to stop vehicle");
-      uniquePush(sections, "RTA s164 - Require driver identity/licence details");
-      uniquePush(sections, "RTA s165 - Require licence/insurance details");
+      if (identityContext.activeVehicleStop) {
+        uniquePush(sections, "RTA s164 - Require driver identity/licence details");
+        uniquePush(sections, "RTA s165 - Require licence/insurance details");
+      }
     }
 
     if (grounds.level !== "none" || scene.weaponSeen || scene.incidentType === "weapon_sighting") {
@@ -454,14 +552,21 @@
       uniquePush(sections, "POCA 2002 - Cash seizure / criminal property enquiry path");
     }
 
-    if (scene.refusesProvideId || scene.noFixedAddress) {
+    if ((scene.refusesProvideId && identityContext.offenceSuspicion) || (scene.noFixedAddress && identityContext.offenceSuspicion)) {
       uniquePush(sections, "PACE s24(5)(a) - Necessity to ascertain name/address");
     }
-    if (scene.suspectedFalseIdentity) {
+    if (scene.suspectedFalseIdentity && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
       uniquePush(sections, "PACE s24(5)(b) - Necessity to prevent disappearance");
     }
-    if (scene.obstructiveConduct || scene.refusesVehicleDocs || scene.behavior === "fleeing") {
+    if (
+      (scene.obstructiveConduct && identityContext.offenceSuspicion) ||
+      (scene.refusesVehicleDocs && identityContext.activeVehicleStop) ||
+      scene.behavior === "fleeing"
+    ) {
       uniquePush(sections, "PACE s24(5)(e) - Necessity for prompt/effective investigation");
+    }
+    if (scene.faceCoveringPresent && identityContext.faceCoveringPowerActive) {
+      uniquePush(sections, "CJPOA s60AA - Removal of face covering in authorised area");
     }
 
     if (arrestReasons.length > 0) {
@@ -472,7 +577,7 @@
     return sections;
   }
 
-  function buildLikelyOffences(scene, grounds, contexts) {
+  function buildLikelyOffences(scene, grounds, contexts, identityContext) {
     var offences = [];
     var speedProfile = computeSpeedProfile(scene);
 
@@ -498,14 +603,17 @@
       }
     }
 
-    if (scene.refusesProvideId) {
+    if (scene.refusesProvideId && identityContext.idIsRequired) {
       offences.push("Refusal to provide identity details where lawfully required (context dependent)");
     }
-    if (scene.suspectedFalseIdentity) {
+    if (scene.suspectedFalseIdentity && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
       offences.push("Providing suspected false details (context dependent)");
     }
-    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+    if (contexts.vehicleContext && scene.refusesVehicleDocs && identityContext.activeVehicleStop) {
       offences.push("Failure to provide vehicle documents/details (context dependent)");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && identityContext.faceCoveringPowerActive) {
+      offences.push("Failure to remove face covering when lawfully required (s60AA context dependent)");
     }
 
     if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
@@ -519,7 +627,7 @@
     return offences;
   }
 
-  function buildImmediateActions(scene, risk, grounds, contexts) {
+  function buildImmediateActions(scene, risk, grounds, contexts, identityContext) {
     var actions = [];
     actions.push("Anchor scene facts: exact location, timestamp, subject count, Bodycam (BVW) narrative.");
     actions.push("Issue clear commands and de-escalate before force where safe.");
@@ -549,10 +657,21 @@
       actions.push("Document cash source-of-funds account and preserve seizure continuity.");
     }
     if (scene.refusesProvideId || scene.suspectedFalseIdentity || scene.noFixedAddress || scene.obstructiveConduct) {
-      actions.push("Run structured identity verification and record all requests/refusals verbatim.");
+      if (identityContext.idIsRequired || identityContext.offenceSuspicion) {
+        actions.push("Run structured identity verification and record all requests/refusals verbatim.");
+      } else {
+        actions.push("Do not over-escalate solely for ID refusal; continue engagement and lawful fact-gathering.");
+      }
     }
-    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+    if (contexts.vehicleContext && scene.refusesVehicleDocs && identityContext.activeVehicleStop) {
       actions.push("Repeat lawful request for driving details/docs and record refusal before escalation.");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering) {
+      if (identityContext.faceCoveringPowerActive) {
+        actions.push("State authorised legal basis and direct face-covering removal, documenting response.");
+      } else {
+        actions.push("Do not compel face-covering removal without specific lawful power; continue evidence-led approach.");
+      }
     }
 
     return actions;
@@ -777,6 +896,21 @@
       ];
     }
 
+    if (risk.level === "low" && arrestReasons.length === 0) {
+      return [
+        {
+          method: "Investigative Conversation / Documented Stop",
+          reason: "Low risk and no active arrest necessity; continue proportionate enquiries only.",
+          ukReference: "PACE proportionality",
+        },
+        {
+          method: "NFA or Warning",
+          reason: "Use warning/NFA where offence threshold is not clearly met.",
+          ukReference: "Officer discretion",
+        },
+      ];
+    }
+
     if (risk.level === "medium") {
       return [
         {
@@ -868,7 +1002,7 @@
     return notes;
   }
 
-  function buildPaceTriggers(scene, contexts, grounds, arrestReasons) {
+  function buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext) {
     var triggers = [];
 
     function add(value) {
@@ -880,14 +1014,21 @@
     if (grounds.level !== "none" || scene.weaponSeen || scene.incidentType === "weapon_sighting") {
       add("PACE s1: Stop/search grounds are currently present.");
     }
-    if (scene.refusesProvideId || scene.noFixedAddress) {
+    if ((scene.refusesProvideId && identityContext.offenceSuspicion) || (scene.noFixedAddress && identityContext.offenceSuspicion)) {
       add("PACE s24(5)(a): Necessity may apply to ascertain name/address.");
     }
-    if (scene.suspectedFalseIdentity) {
+    if (scene.suspectedFalseIdentity && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
       add("PACE s24(5)(b): Necessity may apply to prevent disappearance under false details.");
     }
-    if (scene.obstructiveConduct || scene.refusesVehicleDocs || scene.behavior === "fleeing") {
+    if (
+      (scene.obstructiveConduct && identityContext.offenceSuspicion) ||
+      (scene.refusesVehicleDocs && identityContext.activeVehicleStop) ||
+      scene.behavior === "fleeing"
+    ) {
       add("PACE s24(5)(e): Necessity may apply for prompt/effective investigation.");
+    }
+    if (scene.faceCoveringPresent && identityContext.faceCoveringPowerActive) {
+      add("CJPOA s60AA: Face-covering removal power may apply in authorised area.");
     }
     if (arrestReasons.length > 0) {
       add("PACE s24: Active arrest-necessity indicators are present.");
@@ -897,7 +1038,7 @@
     return triggers;
   }
 
-  function buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts) {
+  function buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts, identityContext) {
     var pointers = [];
     var speedProfile = computeSpeedProfile(scene);
     var levelWeight = { critical: 3, high: 2, info: 1 };
@@ -919,7 +1060,11 @@
     }
 
     if (scene.refusesProvideId) {
-      push("high", "ID Refusal Trigger", "Consider PACE s24(5)(a) necessity and document exact refusal wording.");
+      if (identityContext.idIsRequired || identityContext.offenceSuspicion) {
+        push("high", "ID Refusal Trigger", "Consider PACE s24(5)(a) necessity and document exact refusal wording.");
+      } else {
+        push("info", "ID Refusal Context", "No general compulsory ID power here; avoid escalation solely for refusal.");
+      }
     }
     if (scene.suspectedFalseIdentity) {
       push("high", "False Identity Trigger", "Identity may be false; consider PACE s24(5)(b) necessity.");
@@ -927,8 +1072,17 @@
     if (scene.obstructiveConduct) {
       push("high", "Obstruction Trigger", "Obstructive conduct can engage PACE s24(5)(e) necessity.");
     }
-    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+    if (contexts.vehicleContext && scene.refusesVehicleDocs && identityContext.activeVehicleStop) {
       push("high", "Vehicle Docs Refusal", "Use RTA s164/s165 route and assess PACE s24(5)(e) necessity.");
+    }
+    if (scene.refusesVehicleDocs && !identityContext.activeVehicleStop) {
+      push("info", "Vehicle Docs Context", "Confirm lawful stop context before treating docs refusal as non-compliance trigger.");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && identityContext.faceCoveringPowerActive) {
+      push("high", "Face Covering Trigger", "Authorised area active; s60AA may support removal requirement.");
+    }
+    if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && !identityContext.faceCoveringPowerActive) {
+      push("info", "Face Covering Context", "No active removal power shown; continue lawful alternatives.");
     }
 
     if ((risk.level === "high" || risk.level === "critical") && grounds.level === "weak") {
@@ -987,7 +1141,8 @@
     arrestReasons,
     likelyOffences,
     paceTriggers,
-    triggerPointers
+    triggerPointers,
+    identityContext
   ) {
     var primaryAction = "Stabilise scene and gather articulable facts.";
     if (Array.isArray(immediateActions) && immediateActions.length > 0) {
@@ -1023,6 +1178,20 @@
       priorityAlert = triggerPointers[0].title + ": " + triggerPointers[0].detail;
     }
 
+    var idExpectation = identityContext.idIsRequired
+      ? "ID/details are lawfully required in this context."
+      : identityContext.offenceSuspicion
+        ? "No general ID duty, but refusal may support PACE necessity if identity cannot be ascertained."
+        : "No general compulsory ID power in this context.";
+
+    var faceCovering = identityContext.faceCoveringBasis;
+    var vehicleStopStatus = "Not a vehicle stop scene.";
+    if (scene.mode === "vehicle" || scene.incidentType === "traffic_stop" || scene.incidentType === "pursuit") {
+      vehicleStopStatus = identityContext.activeVehicleStop
+        ? "Lawful vehicle stop context is active."
+        : "Vehicle context present but lawful stop context is not yet confirmed.";
+    }
+
     return {
       incident: humanizeLabel(scene.incidentType),
       riskTag: risk.level.toUpperCase(),
@@ -1034,6 +1203,9 @@
       primaryOffence: topOffence,
       paceFocus: paceFocus,
       priorityAlert: priorityAlert,
+      idExpectation: idExpectation,
+      faceCovering: faceCovering,
+      vehicleStopStatus: vehicleStopStatus,
     };
   }
 
@@ -1042,18 +1214,19 @@
     var log = formatLocalTimestamp();
     var contexts = deriveContexts(scene);
     var grounds = assessGrounds(scene, contexts);
-    var risk = calculateRisk(scene, contexts);
-    var gate = gateServerRules(scene, contexts);
-    var arrestReasons = buildArrestReasons(scene, risk, grounds, contexts);
-    var likelyOffences = buildLikelyOffences(scene, grounds, contexts);
-    var sections = selectLegalSections(scene, grounds, contexts, arrestReasons);
-    var immediateActions = buildImmediateActions(scene, risk, grounds, contexts);
+    var identityContext = assessIdentityExpectation(scene, contexts, grounds);
+    var risk = calculateRisk(scene, contexts, identityContext);
+    var gate = gateServerRules(scene, contexts, identityContext);
+    var arrestReasons = buildArrestReasons(scene, risk, grounds, contexts, identityContext);
+    var likelyOffences = buildLikelyOffences(scene, grounds, contexts, identityContext);
+    var sections = selectLegalSections(scene, grounds, contexts, arrestReasons, identityContext);
+    var immediateActions = buildImmediateActions(scene, risk, grounds, contexts, identityContext);
     var tacticalActions = buildTacticalActions(scene, risk, contexts);
     var disposals = buildDisposals(scene, risk, grounds, contexts, arrestReasons, gate.blocked.length);
     var evidence = buildEvidenceChecklist(scene, contexts, grounds);
     var rationale = buildRationale(scene, risk, grounds);
-    var paceTriggers = buildPaceTriggers(scene, contexts, grounds, arrestReasons);
-    var triggerPointers = buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts);
+    var paceTriggers = buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext);
+    var triggerPointers = buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts, identityContext);
     var quickReference = buildQuickReference(
       scene,
       risk,
@@ -1064,7 +1237,8 @@
       arrestReasons,
       likelyOffences,
       paceTriggers,
-      triggerPointers
+      triggerPointers,
+      identityContext
     );
 
     return {
@@ -1077,6 +1251,7 @@
       arrestReasons: arrestReasons,
       likelyOffences: likelyOffences,
       cityPolicy: CITY_POLICY,
+      identityContext: identityContext,
       cautionText: PACE_CAUTION_TEXT,
       sections: sections,
       immediateActions: immediateActions,

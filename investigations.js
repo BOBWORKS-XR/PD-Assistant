@@ -189,14 +189,23 @@
     if (caseData.scene.noFixedAddress) lines.push("- No fixed/verifiable address.");
     if (caseData.scene.obstructiveConduct) lines.push("- Obstructive or persistent non-compliance.");
     if (caseData.scene.refusesVehicleDocs) lines.push("- Vehicle docs/details refused on request.");
+    if (caseData.scene.vehiclePulledOver) lines.push("- Lawful vehicle stop context marked as active.");
+    if (caseData.scene.faceCoveringPresent) lines.push("- Face covering present.");
+    if (caseData.scene.refusesRemoveFaceCovering) lines.push("- Refusal to remove face covering recorded.");
     if (
       !caseData.scene.refusesProvideId &&
       !caseData.scene.suspectedFalseIdentity &&
       !caseData.scene.noFixedAddress &&
       !caseData.scene.obstructiveConduct &&
-      !caseData.scene.refusesVehicleDocs
+      !caseData.scene.refusesVehicleDocs &&
+      !caseData.scene.faceCoveringPresent &&
+      !caseData.scene.refusesRemoveFaceCovering
     ) {
       lines.push("- No elevated identity/compliance factors recorded.");
+    }
+    if (caseData.identityContext) {
+      lines.push("- ID expectation: " + caseData.identityContext.idBasis);
+      lines.push("- Face-covering power context: " + caseData.identityContext.faceCoveringBasis);
     }
     lines.push("");
 
