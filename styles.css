@@ -1,4 +1,5 @@
 :root {
+  --ops-bar-offset: 102px;
   --bg-a: #eff4fb;
   --bg-b: #dce7f5;
   --ink: #102032;
@@ -53,6 +54,51 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--ink);
   background: linear-gradient(140deg, var(--bg-a) 0%, var(--bg-b) 100%);
+  padding-top: var(--ops-bar-offset);
+}
+
+.ops-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: 0 8px 20px rgba(16, 32, 50, 0.14);
+}
+
+.ops-grid {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.ops-cell {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--info-bg);
+}
+
+.ops-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ops-value {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
 }
 
 .layout {
@@ -385,12 +431,28 @@ code {
 }
 
 @media (max-width: 1024px) {
+  :root {
+    --ops-bar-offset: 150px;
+  }
+
+  .ops-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
+  :root {
+    --ops-bar-offset: 248px;
+  }
+
+  .ops-grid {
+    grid-template-columns: 1fr;
+  }
+
   .grid,
   .info-bar,
   .quick-grid {

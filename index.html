@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <header class="ops-bar" id="ops-bar">
+      <div class="ops-grid">
+        <div class="ops-cell">
+          <span class="ops-label">Top Point</span>
+          <span class="ops-value" id="ops-top-point">Awaiting scene input</span>
+        </div>
+        <div class="ops-cell">
+          <span class="ops-label">Urgent Action</span>
+          <span class="ops-value" id="ops-urgent-action">Awaiting scene input</span>
+        </div>
+        <div class="ops-cell">
+          <span class="ops-label">Key Section</span>
+          <span class="ops-value" id="ops-key-section">Awaiting scene input</span>
+        </div>
+        <div class="ops-cell">
+          <span class="ops-label">Next Step</span>
+          <span class="ops-value" id="ops-next-step">Awaiting scene input</span>
+        </div>
+      </div>
+    </header>
+
     <main class="layout">
       <section class="panel">
         <header class="panel-head">
@@ -122,6 +143,10 @@
             <label><input type="checkbox" name="knownViolenceMarker" /> Known violence marker</label>
             <label><input type="checkbox" name="subjectIntoxicated" /> Subject appears intoxicated</label>
             <label><input type="checkbox" name="s60Authorized" /> s60 authorized area (RP event)</label>
+            <label><input type="checkbox" name="childVulnerableRisk" /> Child or vulnerable person at risk</label>
+            <label><input type="checkbox" name="propertyDamageRisk" /> Risk of loss or damage to property</label>
+            <label><input type="checkbox" name="publicDecencyRisk" /> Risk of offence against public decency</label>
+            <label><input type="checkbox" name="highwayObstructionRisk" /> Risk of unlawful highway obstruction</label>
           </fieldset>
 
           <fieldset class="dynamic-fieldset" data-show="vehicleContext">

@@ -148,6 +148,7 @@
     var sections = Array.isArray(caseData.sections) ? caseData.sections : [];
     var offences = Array.isArray(caseData.likelyOffences) ? caseData.likelyOffences : [];
     var paceTriggers = Array.isArray(caseData.paceTriggers) ? caseData.paceTriggers : [];
+    var necessityChecklist = Array.isArray(caseData.necessityChecklist) ? caseData.necessityChecklist : [];
     var disposals = Array.isArray(caseData.disposals) ? caseData.disposals : [];
     var evidence = Array.isArray(caseData.evidence) ? caseData.evidence : [];
     var arrestReasons =
@@ -206,6 +207,21 @@
     if (caseData.identityContext) {
       lines.push("- ID expectation: " + caseData.identityContext.idBasis);
       lines.push("- Face-covering power context: " + caseData.identityContext.faceCoveringBasis);
+      lines.push(
+        "- Vehicle stop context: " +
+          (caseData.identityContext.activeVehicleStop ? "Lawful vehicle-stop context active." : "Lawful vehicle-stop context not confirmed.")
+      );
+    }
+    lines.push("");
+
+    lines.push("IDCOPPLAN NECESSITY SUMMARY");
+    if (necessityChecklist.length === 0) {
+      lines.push("- No active IDCOPPLAN necessity indicator recorded.");
+    } else {
+      necessityChecklist.forEach(function (item) {
+        var code = item.code === "P2" ? "P" : item.code;
+        lines.push("- " + code + " | " + item.title + " (" + item.paceRef + ")");
+      });
     }
     lines.push("");
 

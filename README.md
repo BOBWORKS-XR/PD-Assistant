@@ -21,11 +21,18 @@ Rule-based UK-policing RP assistant for FiveM (no API key required).
   - Identity refusal and false-details escalation handling
   - Vehicle pull-over context now gates ID/docs compulsion logic
   - Face-covering handling with s60AA-style power checks
+  - IDCOPPLAN-based necessity breakdown for PACE s24 decisions
   - Live PACE trigger explanations (what section is active and why)
   - Highlighted trigger pointers for rapid on-job scanning
   - Likely offences
   - PACE caution text
   - Local timestamp logging (`en-GB` style)
+- Fixed top command bar:
+  - Top point
+  - Urgent action
+  - Key section
+  - Next step
+  - Page scrolls under the bar with dynamic offset so content is not hidden
 - City policy routes:
   - Cannabis <=15g defaults to confiscation/street resolution when no aggravating factors
   - Cash <=GBP 10,000 treated as generally acceptable unless other indicators escalate

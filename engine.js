@@ -122,6 +122,10 @@
         knownViolenceMarker: false,
         subjectIntoxicated: false,
         s60Authorized: false,
+        childVulnerableRisk: false,
+        propertyDamageRisk: false,
+        publicDecencyRisk: false,
+        highwayObstructionRisk: false,
         speedMph: 0,
         roadType: "urban",
         trafficDensity: "low",
@@ -232,6 +236,54 @@
     };
   }
 
+  function buildNecessityChecklist(scene, contexts, identityContext) {
+    var items = [];
+    var physicalInjuryRisk =
+      scene.weaponSeen || scene.activeShots || scene.behavior === "aggressive" || scene.knownViolenceMarker || scene.injuryPresent;
+
+    function add(code, title, active, paceRef) {
+      if (!active) return;
+      items.push({ code: code, title: title, paceRef: paceRef });
+    }
+
+    add(
+      "I",
+      "Allow prompt and effective investigation",
+      identityContext.offenceSuspicion &&
+        (scene.obstructiveConduct ||
+          scene.behavior === "fleeing" ||
+          (scene.refusesVehicleDocs && identityContext.activeVehicleStop) ||
+          scene.suspectedFalseIdentity ||
+          (scene.refusesProvideId && (identityContext.idIsRequired || identityContext.offenceSuspicion))),
+      "PACE s24 necessity"
+    );
+    add(
+      "D",
+      "Prevent disappearance of suspect",
+      scene.behavior === "fleeing" || scene.suspectedFalseIdentity || scene.noFixedAddress,
+      "PACE s24(5)(b) necessity context"
+    );
+    add("C", "Protect child or vulnerable person", scene.childVulnerableRisk, "PACE s24 necessity");
+    add("O", "Prevent unlawful highway obstruction", scene.highwayObstructionRisk, "PACE s24 necessity");
+    add("P", "Prevent physical injury (to self or others)", physicalInjuryRisk, "PACE s24 necessity");
+    add("P2", "Prevent offence against public decency", scene.publicDecencyRisk, "PACE s24 necessity");
+    add(
+      "L",
+      "Prevent loss of or damage to property",
+      scene.propertyDamageRisk || scene.vehicleAntisocial || scene.activeShots,
+      "PACE s24 necessity"
+    );
+    add("A", "Ascertain address", scene.noFixedAddress && identityContext.offenceSuspicion, "PACE s24(5)(a) necessity context");
+    add(
+      "N",
+      "Ascertain name",
+      (scene.refusesProvideId || scene.suspectedFalseIdentity) && (identityContext.idIsRequired || identityContext.offenceSuspicion),
+      "PACE s24(5)(a) necessity context"
+    );
+
+    return items;
+  }
+
   function assessGrounds(scene, contexts) {
     var score = 0;
     var strongCount = 0;
@@ -311,6 +363,10 @@
     if (scene.knownViolenceMarker) add(3, "Known violence marker");
     if (scene.subjectIntoxicated) add(2, "Intoxication risk");
     if (scene.injuryPresent) add(2, "Injury in scene");
+    if (scene.childVulnerableRisk) add(3, "Child/vulnerable risk");
+    if (scene.propertyDamageRisk) add(2, "Property damage risk");
+    if (scene.publicDecencyRisk) add(1, "Public decency risk");
+    if (scene.highwayObstructionRisk) add(2, "Highway obstruction risk");
     if (scene.refusesProvideId && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
       add(2, "Identity refusal");
     }
@@ -465,9 +521,18 @@
     return { blocked: blocked, warnings: warnings };
   }
 
-  function buildArrestReasons(scene, risk, grounds, contexts, identityContext) {
+  function buildArrestReasons(scene, risk, grounds, contexts, identityContext, necessityChecklist) {
     var reasons = [];
     var speedProfile = computeSpeedProfile(scene);
+    var necessity = Array.isArray(necessityChecklist) ? necessityChecklist : [];
+
+    necessity.forEach(function (item) {
+      if (item.code === "P2") {
+        reasons.push(item.title + " (IDCOPPLAN P)");
+      } else {
+        reasons.push(item.title + " (IDCOPPLAN " + item.code + ")");
+      }
+    });
 
     if (scene.behavior === "fleeing") reasons.push("Subject actively fleeing");
     if (scene.behavior === "aggressive") reasons.push("Aggressive threat behavior");
@@ -475,17 +540,6 @@
     if (scene.weaponSeen) reasons.push("Weapon visible on subject");
     if (scene.refusesProvideId && identityContext.idIsRequired) {
       reasons.push("Refused identity/details where lawfully required (" + identityContext.idBasis + ")");
-    } else if (scene.refusesProvideId && identityContext.offenceSuspicion) {
-      reasons.push("Necessity to ascertain name/address (PACE s24(5)(a))");
-    }
-    if (scene.noFixedAddress && identityContext.offenceSuspicion) {
-      reasons.push("Address cannot be promptly verified (PACE s24(5)(a))");
-    }
-    if (scene.suspectedFalseIdentity && (identityContext.idIsRequired || identityContext.offenceSuspicion)) {
-      reasons.push("Identity details believed false; prevent disappearance (PACE s24(5)(b))");
-    }
-    if (scene.obstructiveConduct && identityContext.offenceSuspicion) {
-      reasons.push("Obstructive conduct affecting prompt/effective investigation (PACE s24(5)(e))");
     }
     if (scene.grounds.indexOf("stolen_vehicle_marker") !== -1) reasons.push("Vehicle flagged as potentially stolen");
     if (contexts.pursuitContext && scene.failedStopSignals >= 2) reasons.push("Repeated refusal to stop for police");
@@ -568,6 +622,18 @@
     if (scene.faceCoveringPresent && identityContext.faceCoveringPowerActive) {
       uniquePush(sections, "CJPOA s60AA - Removal of face covering in authorised area");
     }
+    if (scene.childVulnerableRisk) {
+      uniquePush(sections, "PACE s24 necessity - Protect child or vulnerable person");
+    }
+    if (scene.highwayObstructionRisk) {
+      uniquePush(sections, "PACE s24 necessity - Prevent unlawful highway obstruction");
+    }
+    if (scene.publicDecencyRisk) {
+      uniquePush(sections, "PACE s24 necessity - Prevent offence against public decency");
+    }
+    if (scene.propertyDamageRisk) {
+      uniquePush(sections, "PACE s24 necessity - Prevent loss/damage to property");
+    }
 
     if (arrestReasons.length > 0) {
       uniquePush(sections, "PACE s24 - Arrest necessity");
@@ -614,6 +680,15 @@
     }
     if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && identityContext.faceCoveringPowerActive) {
       offences.push("Failure to remove face covering when lawfully required (s60AA context dependent)");
+    }
+    if (scene.highwayObstructionRisk) {
+      offences.push("Potential unlawful highway obstruction (context dependent)");
+    }
+    if (scene.publicDecencyRisk) {
+      offences.push("Potential offence against public decency (context dependent)");
+    }
+    if (scene.propertyDamageRisk) {
+      offences.push("Potential criminal damage / property loss risk (context dependent)");
     }
 
     if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
@@ -672,6 +747,18 @@
       } else {
         actions.push("Do not compel face-covering removal without specific lawful power; continue evidence-led approach.");
       }
+    }
+    if (scene.childVulnerableRisk) {
+      actions.push("Prioritize immediate safeguarding actions for child/vulnerable person.");
+    }
+    if (scene.highwayObstructionRisk) {
+      actions.push("Address highway obstruction risk promptly and document proportionate intervention.");
+    }
+    if (scene.publicDecencyRisk) {
+      actions.push("Assess public-decency risk and intervene proportionately to prevent escalation.");
+    }
+    if (scene.propertyDamageRisk) {
+      actions.push("Protect property and secure scene to prevent further damage.");
     }
 
     return actions;
@@ -1002,8 +1089,9 @@
     return notes;
   }
 
-  function buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext) {
+  function buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext, necessityChecklist) {
     var triggers = [];
+    var necessity = Array.isArray(necessityChecklist) ? necessityChecklist : [];
 
     function add(value) {
       if (triggers.indexOf(value) === -1) {
@@ -1030,6 +1118,13 @@
     if (scene.faceCoveringPresent && identityContext.faceCoveringPowerActive) {
       add("CJPOA s60AA: Face-covering removal power may apply in authorised area.");
     }
+    necessity.forEach(function (item) {
+      if (item.code === "P2") {
+        add("PACE s24 necessity (IDCOPPLAN P): " + item.title + ".");
+      } else {
+        add("PACE s24 necessity (IDCOPPLAN " + item.code + "): " + item.title + ".");
+      }
+    });
     if (arrestReasons.length > 0) {
       add("PACE s24: Active arrest-necessity indicators are present.");
       add("PACE s32: Post-arrest search power applies after arrest.");
@@ -1083,6 +1178,18 @@
     }
     if (scene.faceCoveringPresent && scene.refusesRemoveFaceCovering && !identityContext.faceCoveringPowerActive) {
       push("info", "Face Covering Context", "No active removal power shown; continue lawful alternatives.");
+    }
+    if (scene.childVulnerableRisk) {
+      push("high", "Safeguarding Trigger", "Child/vulnerable risk is active; prioritize protection measures.");
+    }
+    if (scene.highwayObstructionRisk) {
+      push("high", "Highway Obstruction Trigger", "Risk of unlawful highway obstruction requires prompt proportionate action.");
+    }
+    if (scene.publicDecencyRisk) {
+      push("info", "Public Decency Trigger", "Assess necessity to prevent offence against public decency.");
+    }
+    if (scene.propertyDamageRisk) {
+      push("high", "Property Risk Trigger", "Prevent further loss or damage to property.");
     }
 
     if ((risk.level === "high" || risk.level === "critical") && grounds.level === "weak") {
@@ -1209,15 +1316,50 @@
     };
   }
 
+  function truncateForBar(text, maxLen) {
+    var t = String(text || "").trim();
+    if (t.length <= maxLen) return t;
+    return t.slice(0, maxLen - 1) + "...";
+  }
+
+  function buildTopBarSummary(triggerPointers, immediateActions, sections, disposals) {
+    var topPoint = "No critical trigger";
+    if (Array.isArray(triggerPointers) && triggerPointers.length > 0) {
+      topPoint = triggerPointers[0].title;
+    }
+
+    var urgentAction = "Continue standard checks";
+    if (Array.isArray(immediateActions) && immediateActions.length > 0) {
+      urgentAction = immediateActions[0];
+    }
+
+    var keySection = "No section selected";
+    if (Array.isArray(sections) && sections.length > 0) {
+      keySection = sections[0];
+      var dashIdx = keySection.indexOf(" - ");
+      if (dashIdx > 0) keySection = keySection.slice(0, dashIdx);
+    }
+
+    var nextStep = getTopDisposal(disposals);
+
+    return {
+      topPoint: truncateForBar(topPoint, 42),
+      urgentAction: truncateForBar(urgentAction, 72),
+      keySection: truncateForBar(keySection, 42),
+      nextStep: truncateForBar(nextStep, 48),
+    };
+  }
+
   function evaluateScene(rawInput) {
     var scene = normalizeScene(rawInput);
     var log = formatLocalTimestamp();
     var contexts = deriveContexts(scene);
     var grounds = assessGrounds(scene, contexts);
     var identityContext = assessIdentityExpectation(scene, contexts, grounds);
+    var necessityChecklist = buildNecessityChecklist(scene, contexts, identityContext);
     var risk = calculateRisk(scene, contexts, identityContext);
     var gate = gateServerRules(scene, contexts, identityContext);
-    var arrestReasons = buildArrestReasons(scene, risk, grounds, contexts, identityContext);
+    var arrestReasons = buildArrestReasons(scene, risk, grounds, contexts, identityContext, necessityChecklist);
     var likelyOffences = buildLikelyOffences(scene, grounds, contexts, identityContext);
     var sections = selectLegalSections(scene, grounds, contexts, arrestReasons, identityContext);
     var immediateActions = buildImmediateActions(scene, risk, grounds, contexts, identityContext);
@@ -1225,8 +1367,9 @@
     var disposals = buildDisposals(scene, risk, grounds, contexts, arrestReasons, gate.blocked.length);
     var evidence = buildEvidenceChecklist(scene, contexts, grounds);
     var rationale = buildRationale(scene, risk, grounds);
-    var paceTriggers = buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext);
+    var paceTriggers = buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext, necessityChecklist);
     var triggerPointers = buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts, identityContext);
+    var topBarSummary = buildTopBarSummary(triggerPointers, immediateActions, sections, disposals);
     var quickReference = buildQuickReference(
       scene,
       risk,
@@ -1252,6 +1395,7 @@
       likelyOffences: likelyOffences,
       cityPolicy: CITY_POLICY,
       identityContext: identityContext,
+      necessityChecklist: necessityChecklist,
       cautionText: PACE_CAUTION_TEXT,
       sections: sections,
       immediateActions: immediateActions,
@@ -1261,6 +1405,7 @@
       rationale: rationale,
       paceTriggers: paceTriggers,
       triggerPointers: triggerPointers,
+      topBarSummary: topBarSummary,
       quickReference: quickReference,
     };
   }

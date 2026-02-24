@@ -3,6 +3,11 @@
   var result = document.getElementById("result");
   var contextStrip = document.getElementById("context-strip");
   var themeToggle = document.getElementById("theme-toggle");
+  var opsBar = document.getElementById("ops-bar");
+  var opsTopPoint = document.getElementById("ops-top-point");
+  var opsUrgentAction = document.getElementById("ops-urgent-action");
+  var opsKeySection = document.getElementById("ops-key-section");
+  var opsNextStep = document.getElementById("ops-next-step");
 
   function getCheckboxValues(formEl, name) {
     return Array.prototype.slice
@@ -29,6 +34,10 @@
       knownViolenceMarker: formData.get("knownViolenceMarker") === "on",
       subjectIntoxicated: formData.get("subjectIntoxicated") === "on",
       s60Authorized: formData.get("s60Authorized") === "on",
+      childVulnerableRisk: formData.get("childVulnerableRisk") === "on",
+      propertyDamageRisk: formData.get("propertyDamageRisk") === "on",
+      publicDecencyRisk: formData.get("publicDecencyRisk") === "on",
+      highwayObstructionRisk: formData.get("highwayObstructionRisk") === "on",
       speedMph: Number(formData.get("speedMph") || 0),
       roadType: formData.get("roadType") || "urban",
       trafficDensity: formData.get("trafficDensity") || "low",
@@ -178,6 +187,22 @@
     );
   }
 
+  function renderNecessityChecklist(items) {
+    if (!items || items.length === 0) {
+      return "<h3>IDCOPPLAN Necessity (Live)</h3><p class=\"muted\">No active arrest necessity indicator captured.</p>";
+    }
+    return (
+      "<h3>IDCOPPLAN Necessity (Live)</h3><ul>" +
+      items
+        .map(function (item) {
+          var code = item.code === "P2" ? "P" : item.code;
+          return "<li><strong>" + code + ":</strong> " + item.title + "</li>";
+        })
+        .join("") +
+      "</ul>"
+    );
+  }
+
   function renderContextChips(contexts, scene) {
     var chips = [];
     chips.push("Mode: " + scene.mode);
@@ -196,6 +221,9 @@
     if (scene.refusesVehicleDocs) chips.push("Docs refusal");
     if (scene.faceCoveringPresent) chips.push("Face covering present");
     if (scene.refusesRemoveFaceCovering) chips.push("Face-covering removal refused");
+    if (scene.childVulnerableRisk) chips.push("Child/vulnerable risk");
+    if (scene.publicDecencyRisk) chips.push("Public decency risk");
+    if (scene.highwayObstructionRisk) chips.push("Highway obstruction risk");
 
     contextStrip.innerHTML = chips
       .map(function (chip) {
@@ -297,6 +325,7 @@
       blockedHtml +
       warningHtml +
       renderRiskDrivers(data.risk.factors) +
+      renderNecessityChecklist(data.necessityChecklist) +
       renderList("PACE Triggers (Live)", data.paceTriggers) +
       renderList("Arrest Reasons (Necessity Indicators)", data.arrestReasons) +
       renderList("Likely Offences (UK-Style RP)", data.likelyOffences) +
@@ -315,6 +344,14 @@
       '<a class="handover-link" href="./investigations.html" target="_blank" rel="noopener">Open Investigations Handover Page</a>' +
       "</div>";
 
+    if (data.topBarSummary) {
+      opsTopPoint.textContent = data.topBarSummary.topPoint;
+      opsUrgentAction.textContent = data.topBarSummary.urgentAction;
+      opsKeySection.textContent = data.topBarSummary.keySection;
+      opsNextStep.textContent = data.topBarSummary.nextStep;
+    }
+
+    syncOpsBarOffset();
     saveForInvestigations(data);
   }
 
@@ -331,6 +368,12 @@
     if (themeToggle) {
       themeToggle.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
     }
+  }
+
+  function syncOpsBarOffset() {
+    if (!opsBar) return;
+    var h = opsBar.offsetHeight || 100;
+    document.documentElement.style.setProperty("--ops-bar-offset", h + 8 + "px");
   }
 
   function initTheme() {
@@ -366,6 +409,9 @@
     themeToggle.addEventListener("click", toggleTheme);
   }
 
+  window.addEventListener("resize", syncOpsBarOffset);
+
   initTheme();
+  syncOpsBarOffset();
   evaluateAndRender();
 })();

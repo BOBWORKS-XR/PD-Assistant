@@ -105,6 +105,22 @@ const scenarios = [
     },
   },
   {
+    name: "Public disorder with safeguarding and obstruction risks",
+    input: {
+      location: "Legion Square",
+      mode: "foot",
+      incidentType: "public_disorder",
+      behavior: "aggressive",
+      pdOnDuty: 7,
+      groupSize: 4,
+      childVulnerableRisk: true,
+      propertyDamageRisk: true,
+      highwayObstructionRisk: true,
+      publicDecencyRisk: true,
+      grounds: ["witness_statement"],
+    },
+  },
+  {
     name: "Extended high-speed pursuit with weapons",
     input: {
       location: "Vinewood Blvd",
@@ -142,6 +158,15 @@ for (const scenario of scenarios) {
   console.log("Arrest reasons:", result.arrestReasons.length ? result.arrestReasons.join(" ; ") : "None");
   console.log("Offences:", result.likelyOffences.length ? result.likelyOffences.join(" ; ") : "None");
   console.log("Quick ref:", result.quickReference.primaryAction, "|", result.quickReference.disposal);
+  console.log("Top bar:", result.topBarSummary.topPoint, "|", result.topBarSummary.keySection, "|", result.topBarSummary.nextStep);
+  console.log(
+    "IDCOPPLAN:",
+    result.necessityChecklist.length
+      ? result.necessityChecklist
+          .map((n) => `${n.code === "P2" ? "P" : n.code}:${n.title}`)
+          .join(" | ")
+      : "None"
+  );
   console.log("PACE:", result.paceTriggers.length ? result.paceTriggers.join(" | ") : "None");
   console.log(
     "Pointer:",
