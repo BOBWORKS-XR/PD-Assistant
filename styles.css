@@ -312,6 +312,48 @@ code {
   color: var(--ink);
 }
 
+.trigger-board {
+  margin: 8px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--info-bg);
+}
+
+.trigger-card {
+  border-left: 4px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: var(--field-bg);
+}
+
+.trigger-card:last-child {
+  margin-bottom: 0;
+}
+
+.trigger-card p {
+  margin: 0;
+}
+
+.trigger-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.trigger-card.critical {
+  border-left-color: #d43a3a;
+}
+
+.trigger-card.high {
+  border-left-color: #d78f00;
+}
+
+.trigger-card.info {
+  border-left-color: #2f7de1;
+}
+
 .next-step {
   margin-top: 8px;
   border: 1px solid var(--secondary-line);

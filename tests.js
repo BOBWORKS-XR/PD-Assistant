@@ -48,6 +48,27 @@ const scenarios = [
       drugQuantityGrams: 8,
       drugPackaging: "split_bags",
       seizedCashGbp: 18000,
+      refusesProvideId: true,
+      suspectedFalseIdentity: true,
+      obstructiveConduct: true,
+    },
+  },
+  {
+    name: "Traffic stop with ID and docs refusal",
+    input: {
+      location: "Downtown",
+      mode: "vehicle",
+      incidentType: "traffic_stop",
+      behavior: "evasive",
+      pdOnDuty: 5,
+      groupSize: 1,
+      speedMph: 76,
+      roadType: "urban",
+      trafficDensity: "medium",
+      refusesProvideId: true,
+      refusesVehicleDocs: true,
+      noFixedAddress: true,
+      grounds: ["witness_statement"],
     },
   },
   {
@@ -88,6 +109,11 @@ for (const scenario of scenarios) {
   console.log("Arrest reasons:", result.arrestReasons.length ? result.arrestReasons.join(" ; ") : "None");
   console.log("Offences:", result.likelyOffences.length ? result.likelyOffences.join(" ; ") : "None");
   console.log("Quick ref:", result.quickReference.primaryAction, "|", result.quickReference.disposal);
+  console.log("PACE:", result.paceTriggers.length ? result.paceTriggers.join(" | ") : "None");
+  console.log(
+    "Pointer:",
+    result.triggerPointers.length ? `${result.triggerPointers[0].level.toUpperCase()} - ${result.triggerPointers[0].title}` : "None"
+  );
   console.log("Speed profile:", result.risk.speedProfile.speedLimit, "limit,", result.risk.speedProfile.overLimit, "over");
   console.log(
     "Disposals:",

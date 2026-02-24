@@ -18,6 +18,9 @@ Rule-based UK-policing RP assistant for FiveM (no API key required).
 - Structured outputs:
   - Specific disposal methods with reasons + UK references
   - Arrest necessity reasons
+  - Identity refusal and false-details escalation handling
+  - Live PACE trigger explanations (what section is active and why)
+  - Highlighted trigger pointers for rapid on-job scanning
   - Likely offences
   - PACE caution text
   - Local timestamp logging (`en-GB` style)

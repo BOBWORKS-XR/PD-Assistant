@@ -134,6 +134,11 @@
         drugQuantityGrams: 0,
         drugPackaging: "none",
         seizedCashGbp: 0,
+        refusesProvideId: false,
+        suspectedFalseIdentity: false,
+        noFixedAddress: false,
+        obstructiveConduct: false,
+        refusesVehicleDocs: false,
         amberZone: false,
         sceneStartedInAmber: false,
         medicalAttemptDuringActive: false,
@@ -256,6 +261,10 @@
     if (scene.knownViolenceMarker) add(3, "Known violence marker");
     if (scene.subjectIntoxicated) add(2, "Intoxication risk");
     if (scene.injuryPresent) add(2, "Injury in scene");
+    if (scene.refusesProvideId) add(2, "Identity refusal");
+    if (scene.suspectedFalseIdentity) add(3, "Suspected false identity");
+    if (scene.noFixedAddress) add(1, "No fixed/verifiable address");
+    if (scene.obstructiveConduct) add(2, "Obstructive conduct");
 
     if (contexts.vehicleContext) {
       add(TRAFFIC_DENSITY_WEIGHT[scene.trafficDensity] || 0, "Traffic density");
@@ -275,6 +284,7 @@
 
       if (scene.vehicleAntisocial) add(3, "Anti-social vehicle use");
       if (scene.priorS59Warning) add(2, "Prior s59 warning");
+      if (scene.refusesVehicleDocs) add(2, "Refusal to provide vehicle docs/details");
     }
 
     if (contexts.pursuitContext) {
@@ -362,6 +372,12 @@
     if (contexts.vehicleContext && CITY_POLICY.trafficLightsGiveWay) {
       warnings.push("Traffic lights are treated as give-way in city policy; still stop if lane is not clear.");
     }
+    if (scene.refusesProvideId) {
+      warnings.push("ID refusal flagged: record exact wording of request and refusal.");
+    }
+    if (scene.suspectedFalseIdentity) {
+      warnings.push("Possible false details: verify identity before final disposal decision.");
+    }
 
     return { blocked: blocked, warnings: warnings };
   }
@@ -374,8 +390,15 @@
     if (scene.behavior === "aggressive") reasons.push("Aggressive threat behavior");
     if (scene.activeShots) reasons.push("Active firearms discharge risk");
     if (scene.weaponSeen) reasons.push("Weapon visible on subject");
+    if (scene.refusesProvideId) reasons.push("Necessity to ascertain name/address (PACE s24(5)(a))");
+    if (scene.noFixedAddress) reasons.push("Address cannot be promptly verified (PACE s24(5)(a))");
+    if (scene.suspectedFalseIdentity) reasons.push("Identity details believed false; prevent disappearance (PACE s24(5)(b))");
+    if (scene.obstructiveConduct) reasons.push("Obstructive conduct affecting prompt/effective investigation (PACE s24(5)(e))");
     if (scene.grounds.indexOf("stolen_vehicle_marker") !== -1) reasons.push("Vehicle flagged as potentially stolen");
     if (contexts.pursuitContext && scene.failedStopSignals >= 2) reasons.push("Repeated refusal to stop for police");
+    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+      reasons.push("Vehicle docs/details refused after lawful request (PACE s24(5)(e))");
+    }
     if (contexts.pursuitContext && speedProfile.overLimit >= 20) {
       reasons.push("Dangerous pursuit driving threshold met (" + speedProfile.overLimit + " mph over limit)");
     }
@@ -396,6 +419,7 @@
 
     if (contexts.vehicleContext) {
       uniquePush(sections, "RTA s163 - Power to stop vehicle");
+      uniquePush(sections, "RTA s164 - Require driver identity/licence details");
       uniquePush(sections, "RTA s165 - Require licence/insurance details");
     }
 
@@ -430,6 +454,16 @@
       uniquePush(sections, "POCA 2002 - Cash seizure / criminal property enquiry path");
     }
 
+    if (scene.refusesProvideId || scene.noFixedAddress) {
+      uniquePush(sections, "PACE s24(5)(a) - Necessity to ascertain name/address");
+    }
+    if (scene.suspectedFalseIdentity) {
+      uniquePush(sections, "PACE s24(5)(b) - Necessity to prevent disappearance");
+    }
+    if (scene.obstructiveConduct || scene.refusesVehicleDocs || scene.behavior === "fleeing") {
+      uniquePush(sections, "PACE s24(5)(e) - Necessity for prompt/effective investigation");
+    }
+
     if (arrestReasons.length > 0) {
       uniquePush(sections, "PACE s24 - Arrest necessity");
       uniquePush(sections, "PACE s32 - Post-arrest search");
@@ -462,6 +496,16 @@
       } else {
         offences.push("Simple possession of controlled substance");
       }
+    }
+
+    if (scene.refusesProvideId) {
+      offences.push("Refusal to provide identity details where lawfully required (context dependent)");
+    }
+    if (scene.suspectedFalseIdentity) {
+      offences.push("Providing suspected false details (context dependent)");
+    }
+    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+      offences.push("Failure to provide vehicle documents/details (context dependent)");
     }
 
     if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
@@ -503,6 +547,12 @@
     }
     if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
       actions.push("Document cash source-of-funds account and preserve seizure continuity.");
+    }
+    if (scene.refusesProvideId || scene.suspectedFalseIdentity || scene.noFixedAddress || scene.obstructiveConduct) {
+      actions.push("Run structured identity verification and record all requests/refusals verbatim.");
+    }
+    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+      actions.push("Repeat lawful request for driving details/docs and record refusal before escalation.");
     }
 
     return actions;
@@ -818,6 +868,100 @@
     return notes;
   }
 
+  function buildPaceTriggers(scene, contexts, grounds, arrestReasons) {
+    var triggers = [];
+
+    function add(value) {
+      if (triggers.indexOf(value) === -1) {
+        triggers.push(value);
+      }
+    }
+
+    if (grounds.level !== "none" || scene.weaponSeen || scene.incidentType === "weapon_sighting") {
+      add("PACE s1: Stop/search grounds are currently present.");
+    }
+    if (scene.refusesProvideId || scene.noFixedAddress) {
+      add("PACE s24(5)(a): Necessity may apply to ascertain name/address.");
+    }
+    if (scene.suspectedFalseIdentity) {
+      add("PACE s24(5)(b): Necessity may apply to prevent disappearance under false details.");
+    }
+    if (scene.obstructiveConduct || scene.refusesVehicleDocs || scene.behavior === "fleeing") {
+      add("PACE s24(5)(e): Necessity may apply for prompt/effective investigation.");
+    }
+    if (arrestReasons.length > 0) {
+      add("PACE s24: Active arrest-necessity indicators are present.");
+      add("PACE s32: Post-arrest search power applies after arrest.");
+    }
+
+    return triggers;
+  }
+
+  function buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts) {
+    var pointers = [];
+    var speedProfile = computeSpeedProfile(scene);
+    var levelWeight = { critical: 3, high: 2, info: 1 };
+
+    function push(level, title, detail) {
+      pointers.push({ level: level, title: title, detail: detail });
+    }
+
+    if (Array.isArray(gate.blocked)) {
+      gate.blocked.forEach(function (item) {
+        push("critical", "Rule Block", item);
+      });
+    }
+
+    if (risk.level === "critical") {
+      push("critical", "Critical Threat", "Immediate containment and backup are required.");
+    } else if (risk.level === "high") {
+      push("high", "High Threat", "Containment and rapid supervisor updates are recommended.");
+    }
+
+    if (scene.refusesProvideId) {
+      push("high", "ID Refusal Trigger", "Consider PACE s24(5)(a) necessity and document exact refusal wording.");
+    }
+    if (scene.suspectedFalseIdentity) {
+      push("high", "False Identity Trigger", "Identity may be false; consider PACE s24(5)(b) necessity.");
+    }
+    if (scene.obstructiveConduct) {
+      push("high", "Obstruction Trigger", "Obstructive conduct can engage PACE s24(5)(e) necessity.");
+    }
+    if (contexts.vehicleContext && scene.refusesVehicleDocs) {
+      push("high", "Vehicle Docs Refusal", "Use RTA s164/s165 route and assess PACE s24(5)(e) necessity.");
+    }
+
+    if ((risk.level === "high" || risk.level === "critical") && grounds.level === "weak") {
+      push("high", "Grounds Wording Risk", "Strengthen articulable grounds before intrusive actions.");
+    }
+    if (contexts.vehicleContext && speedProfile.overLimit >= 20) {
+      push(
+        "high",
+        "Speed Escalation",
+        "Current speed is " + speedProfile.overLimit + " mph above local limit (" + speedProfile.speedLimit + " mph)."
+      );
+    }
+    if (scene.drugType === "cannabis" && scene.drugQuantityGrams > 0 && scene.drugQuantityGrams <= CITY_POLICY.cannabisConfiscationMaxGrams) {
+      push(
+        "info",
+        "Cannabis Policy Path",
+        "Quantity is within <= " + CITY_POLICY.cannabisConfiscationMaxGrams + "g confiscation route (if no aggravating factors)."
+      );
+    }
+    if (scene.seizedCashGbp > CITY_POLICY.cashOkayMaxGbp) {
+      push("high", "Cash Threshold Trigger", "Cash exceeds GBP " + CITY_POLICY.cashOkayMaxGbp + "; document POCA rationale.");
+    }
+    if (paceTriggers.length > 0) {
+      push("info", "PACE Active", paceTriggers[0]);
+    }
+
+    pointers.sort(function (a, b) {
+      return (levelWeight[b.level] || 0) - (levelWeight[a.level] || 0);
+    });
+
+    return pointers;
+  }
+
   function humanizeLabel(value) {
     return String(value || "")
       .replace(/_/g, " ")
@@ -833,7 +977,18 @@
     return first.method || "Review with supervisor";
   }
 
-  function buildQuickReference(scene, risk, gate, sections, immediateActions, disposals, arrestReasons, likelyOffences) {
+  function buildQuickReference(
+    scene,
+    risk,
+    gate,
+    sections,
+    immediateActions,
+    disposals,
+    arrestReasons,
+    likelyOffences,
+    paceTriggers,
+    triggerPointers
+  ) {
     var primaryAction = "Stabilise scene and gather articulable facts.";
     if (Array.isArray(immediateActions) && immediateActions.length > 0) {
       primaryAction = immediateActions[0];
@@ -858,6 +1013,16 @@
       topOffence = likelyOffences[0];
     }
 
+    var paceFocus = "No active PACE trigger.";
+    if (Array.isArray(paceTriggers) && paceTriggers.length > 0) {
+      paceFocus = paceTriggers[0];
+    }
+
+    var priorityAlert = "No priority trigger currently active.";
+    if (Array.isArray(triggerPointers) && triggerPointers.length > 0) {
+      priorityAlert = triggerPointers[0].title + ": " + triggerPointers[0].detail;
+    }
+
     return {
       incident: humanizeLabel(scene.incidentType),
       riskTag: risk.level.toUpperCase(),
@@ -867,6 +1032,8 @@
       arrestCall: arrestCall,
       disposal: getTopDisposal(disposals),
       primaryOffence: topOffence,
+      paceFocus: paceFocus,
+      priorityAlert: priorityAlert,
     };
   }
 
@@ -885,6 +1052,8 @@
     var disposals = buildDisposals(scene, risk, grounds, contexts, arrestReasons, gate.blocked.length);
     var evidence = buildEvidenceChecklist(scene, contexts, grounds);
     var rationale = buildRationale(scene, risk, grounds);
+    var paceTriggers = buildPaceTriggers(scene, contexts, grounds, arrestReasons);
+    var triggerPointers = buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts);
     var quickReference = buildQuickReference(
       scene,
       risk,
@@ -893,7 +1062,9 @@
       immediateActions,
       disposals,
       arrestReasons,
-      likelyOffences
+      likelyOffences,
+      paceTriggers,
+      triggerPointers
     );
 
     return {
@@ -913,6 +1084,8 @@
       disposals: disposals,
       evidence: evidence,
       rationale: rationale,
+      paceTriggers: paceTriggers,
+      triggerPointers: triggerPointers,
       quickReference: quickReference,
     };
   }

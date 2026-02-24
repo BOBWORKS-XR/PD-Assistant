@@ -147,6 +147,7 @@
     var lines = [];
     var sections = Array.isArray(caseData.sections) ? caseData.sections : [];
     var offences = Array.isArray(caseData.likelyOffences) ? caseData.likelyOffences : [];
+    var paceTriggers = Array.isArray(caseData.paceTriggers) ? caseData.paceTriggers : [];
     var disposals = Array.isArray(caseData.disposals) ? caseData.disposals : [];
     var evidence = Array.isArray(caseData.evidence) ? caseData.evidence : [];
     var arrestReasons =
@@ -182,8 +183,28 @@
     }
     lines.push("");
 
+    lines.push("IDENTITY / COMPLIANCE FACTORS");
+    if (caseData.scene.refusesProvideId) lines.push("- Not willing to provide ID / name / address.");
+    if (caseData.scene.suspectedFalseIdentity) lines.push("- Suspected false details provided.");
+    if (caseData.scene.noFixedAddress) lines.push("- No fixed/verifiable address.");
+    if (caseData.scene.obstructiveConduct) lines.push("- Obstructive or persistent non-compliance.");
+    if (caseData.scene.refusesVehicleDocs) lines.push("- Vehicle docs/details refused on request.");
+    if (
+      !caseData.scene.refusesProvideId &&
+      !caseData.scene.suspectedFalseIdentity &&
+      !caseData.scene.noFixedAddress &&
+      !caseData.scene.obstructiveConduct &&
+      !caseData.scene.refusesVehicleDocs
+    ) {
+      lines.push("- No elevated identity/compliance factors recorded.");
+    }
+    lines.push("");
+
     lines.push("LEGAL REFERENCES");
     lines.push(sections.length ? sections.join("; ") : "No specific section recorded.");
+    if (paceTriggers.length) {
+      lines.push("PACE Trigger Summary: " + paceTriggers.join(" | "));
+    }
     lines.push("");
 
     lines.push("OFFENCES / CHARGES");

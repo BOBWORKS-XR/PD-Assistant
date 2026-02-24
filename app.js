@@ -41,6 +41,11 @@
       drugQuantityGrams: Number(formData.get("drugQuantityGrams") || 0),
       drugPackaging: formData.get("drugPackaging") || "none",
       seizedCashGbp: Number(formData.get("seizedCashGbp") || 0),
+      refusesProvideId: formData.get("refusesProvideId") === "on",
+      suspectedFalseIdentity: formData.get("suspectedFalseIdentity") === "on",
+      noFixedAddress: formData.get("noFixedAddress") === "on",
+      obstructiveConduct: formData.get("obstructiveConduct") === "on",
+      refusesVehicleDocs: formData.get("refusesVehicleDocs") === "on",
       amberZone: formData.get("amberZone") === "on",
       sceneStartedInAmber: formData.get("sceneStartedInAmber") === "on",
       medicalAttemptDuringActive: formData.get("medicalAttemptDuringActive") === "on",
@@ -127,7 +132,36 @@
       '<p class="quick-item"><strong>Primary Offence:</strong> ' +
       ref.primaryOffence +
       "</p>" +
+      '<p class="quick-item"><strong>PACE Focus:</strong> ' +
+      ref.paceFocus +
+      "</p>" +
+      '<p class="quick-item"><strong>Priority Alert:</strong> ' +
+      ref.priorityAlert +
+      "</p>" +
       "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderTriggerPointers(items) {
+    if (!items || items.length === 0) return "";
+
+    return (
+      '<div class="trigger-board"><h3>Live Trigger Pointers</h3>' +
+      items
+        .slice(0, 6)
+        .map(function (item) {
+          return (
+            '<div class="trigger-card ' +
+            item.level +
+            '"><p class="trigger-title">' +
+            item.title +
+            "</p><p>" +
+            item.detail +
+            "</p></div>"
+          );
+        })
+        .join("") +
       "</div>"
     );
   }
@@ -142,6 +176,11 @@
     if (scene.s60Authorized) chips.push("s60 active");
     if (scene.vehicleAntisocial) chips.push("s59 consideration");
     if (scene.seizedCashGbp > 10000) chips.push("Cash over GBP 10k");
+    if (scene.refusesProvideId) chips.push("ID refusal");
+    if (scene.suspectedFalseIdentity) chips.push("False identity risk");
+    if (scene.obstructiveConduct) chips.push("Obstruction risk");
+    if (scene.noFixedAddress) chips.push("No fixed address");
+    if (scene.refusesVehicleDocs) chips.push("Docs refusal");
 
     contextStrip.innerHTML = chips
       .map(function (chip) {
@@ -239,9 +278,11 @@
       data.risk.speedProfile.overLimit +
       " over local limit)</p>" +
       renderQuickReference(data.quickReference) +
+      renderTriggerPointers(data.triggerPointers) +
       blockedHtml +
       warningHtml +
       renderRiskDrivers(data.risk.factors) +
+      renderList("PACE Triggers (Live)", data.paceTriggers) +
       renderList("Arrest Reasons (Necessity Indicators)", data.arrestReasons) +
       renderList("Likely Offences (UK-Style RP)", data.likelyOffences) +
       renderList("Immediate Actions", data.immediateActions) +
