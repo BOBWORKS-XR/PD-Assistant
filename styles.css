@@ -142,8 +142,21 @@ button {
   background: var(--field-bg);
 }
 
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+}
+
 textarea {
   resize: vertical;
+}
+
+#investigation-log {
+  width: 100%;
+  min-height: 420px;
+  font-family: Consolas, "Courier New", monospace;
+  line-height: 1.35;
 }
 
 button {
