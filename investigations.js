@@ -14,6 +14,7 @@
   var stampSearchBtn = document.getElementById("stamp-search-btn");
   var stampArrestBtn = document.getElementById("stamp-arrest-btn");
   var opsCollapseBtn = document.getElementById("ops-collapse-btn");
+  var opsExportBtn = document.getElementById("ops-export-btn");
   var opsClearBtn = document.getElementById("ops-clear-btn");
   var opsDisclaimer = document.querySelector(".ops-disclaimer");
   var opsDisclaimerCloseBtn = document.querySelector(".ops-disclaimer-close");
@@ -27,6 +28,7 @@
   var TIMELINE_KEY = "epical_pd_timeline";
   var FORM_CACHE_KEY = "epical_pd_investigation_form_v1";
   var OPS_COLLAPSE_KEY = "epical_pd_ops_bar_collapsed_investigation";
+  var GENERATED_CRIME_REPORT_KEY = "epical_pd_generated_crime_report";
 
   var cautionText =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
@@ -118,6 +120,53 @@
     }
   }
 
+  function saveGeneratedCrimeReport(text) {
+    try {
+      localStorage.setItem(GENERATED_CRIME_REPORT_KEY, text || "");
+    } catch (error) {
+      console.error("Unable to save generated crime report", error);
+    }
+  }
+
+  function buildExportFileName() {
+    var stamp = formatCityDateTime(new Date()).replace(/[^\d]/g, "");
+    return "epical-pd-export-" + (stamp || String(Date.now())) + ".md";
+  }
+
+  function triggerDownload(filename, content) {
+    var blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function buildInvestigationExportText() {
+    var summaryText = caseSummary ? (caseSummary.innerText || "").trim() : "";
+    var crimeReportText = output ? (output.value || "").trim() : "";
+
+    if (!crimeReportText) {
+      crimeReportText = "No generated crime report yet.";
+    }
+
+    return [
+      "# EPICAL PD Export",
+      "",
+      "Generated (UK): " + formatCityDateTime(new Date()),
+      "",
+      "## Investigation Summary",
+      summaryText || "No investigation summary available.",
+      "",
+      "## Generated Crime Report",
+      crimeReportText,
+      "",
+    ].join("\n");
+  }
+
   function bindTopStampButtons(caseData) {
     function maybeRefresh() {
       if (caseData) {
@@ -152,6 +201,7 @@
       "epical_pd_officer_profile",
       "epical_pd_timeline",
       "epical_pd_last_case",
+      "epical_pd_generated_crime_report",
       "epical_pd_ops_bar_collapsed_assistant",
       "epical_pd_ops_bar_collapsed_investigation",
     ].forEach(function (key) {
@@ -634,7 +684,9 @@
 
   function refreshOutput(caseData) {
     var values = readForm(caseData);
-    output.value = buildLog(caseData, values);
+    var report = buildLog(caseData, values);
+    output.value = report;
+    saveGeneratedCrimeReport(report);
     saveInvestigationFormCache(values);
   }
 
@@ -682,6 +734,13 @@
         if (!confirmed) return;
         clearAllCachedData();
         window.location.reload();
+      });
+    }
+
+    if (opsExportBtn) {
+      opsExportBtn.addEventListener("click", function () {
+        var content = buildInvestigationExportText();
+        triggerDownload(buildExportFileName(), content);
       });
     }
   }

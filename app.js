@@ -13,6 +13,7 @@
   var opsSuspects = document.getElementById("ops-suspects");
   var opsCollapseBtn = document.getElementById("ops-collapse-btn");
   var opsClearBtn = document.getElementById("ops-clear-btn");
+  var opsExportBtn = document.getElementById("ops-export-btn");
   var opsDisclaimer = document.querySelector(".ops-disclaimer");
   var opsDisclaimerCloseBtn = document.querySelector(".ops-disclaimer-close");
   var stampStopBtn = document.getElementById("stamp-stop-btn");
@@ -29,6 +30,7 @@
   var TIMELINE_KEY = "epical_pd_timeline";
   var FORM_CACHE_KEY = "epical_pd_scene_form_v1";
   var OPS_COLLAPSE_KEY = "epical_pd_ops_bar_collapsed_assistant";
+  var GENERATED_CRIME_REPORT_KEY = "epical_pd_generated_crime_report";
 
   function getCheckboxValues(formEl, name) {
     return Array.prototype.slice
@@ -113,6 +115,50 @@
     renderTimelineLabels(timeline);
   }
 
+  function buildExportFileName() {
+    var stamp = formatUkTimelineStamp(new Date()).replace(/[^\d]/g, "");
+    return "epical-pd-export-" + (stamp || String(Date.now())) + ".md";
+  }
+
+  function triggerDownload(filename, content) {
+    var blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function buildAssistantExportText() {
+    var actionCardText = result ? (result.innerText || "").trim() : "";
+    var crimeReportText = "";
+    try {
+      crimeReportText = (localStorage.getItem(GENERATED_CRIME_REPORT_KEY) || "").trim();
+    } catch (error) {
+      console.error("Unable to read generated crime report", error);
+    }
+
+    if (!crimeReportText) {
+      crimeReportText = "No generated crime report found yet.";
+    }
+
+    return [
+      "# EPICAL PD Export",
+      "",
+      "Generated (UK): " + formatUkTimelineStamp(new Date()),
+      "",
+      "## Assistant Action Card",
+      actionCardText || "No action card generated yet.",
+      "",
+      "## Generated Crime Report",
+      crimeReportText,
+      "",
+    ].join("\n");
+  }
+
   function clearAllCachedData() {
     [
       "epical_pd_scene_form_v1",
@@ -120,6 +166,7 @@
       "epical_pd_officer_profile",
       "epical_pd_timeline",
       "epical_pd_last_case",
+      "epical_pd_generated_crime_report",
       "epical_pd_ops_bar_collapsed_assistant",
       "epical_pd_ops_bar_collapsed_investigation",
     ].forEach(function (key) {
@@ -790,6 +837,13 @@
         if (!confirmed) return;
         clearAllCachedData();
         window.location.reload();
+      });
+    }
+
+    if (opsExportBtn) {
+      opsExportBtn.addEventListener("click", function () {
+        var content = buildAssistantExportText();
+        triggerDownload(buildExportFileName(), content);
       });
     }
   }

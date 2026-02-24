@@ -209,7 +209,7 @@ body {
   margin: 0 auto;
   padding: 7px 10px 8px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
 }
@@ -227,6 +227,14 @@ body {
   align-items: center;
   gap: 6px;
   flex-wrap: nowrap;
+}
+
+.ops-export-btn {
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
 }
 
 .ops-tab {
@@ -419,6 +427,12 @@ button {
   min-width: 34px;
   min-height: 30px;
   padding: 0 8px;
+}
+
+.secondary-btn.ops-export-btn {
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 10px;
 }
 
 #theme-toggle {
@@ -714,7 +728,7 @@ code {
   }
 
   .ops-tabs-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     padding: 6px 8px 7px;
     gap: 6px;
     overflow-x: auto;
@@ -746,6 +760,12 @@ code {
 
   .secondary-btn.ops-collapse-btn {
     min-width: 30px;
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .secondary-btn.ops-export-btn {
     min-height: 28px;
     padding: 0 8px;
     font-size: 11px;
