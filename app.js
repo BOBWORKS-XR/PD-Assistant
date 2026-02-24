@@ -13,6 +13,8 @@
   var opsSuspects = document.getElementById("ops-suspects");
   var opsCollapseBtn = document.getElementById("ops-collapse-btn");
   var opsClearBtn = document.getElementById("ops-clear-btn");
+  var opsDisclaimer = document.querySelector(".ops-disclaimer");
+  var opsDisclaimerCloseBtn = document.querySelector(".ops-disclaimer-close");
   var stampStopBtn = document.getElementById("stamp-stop-btn");
   var stampSearchBtn = document.getElementById("stamp-search-btn");
   var stampArrestBtn = document.getElementById("stamp-arrest-btn");
@@ -751,11 +753,20 @@
     if (!opsBar) return;
     opsBar.classList.toggle("is-collapsed", collapsed);
     if (opsCollapseBtn) {
-      opsCollapseBtn.textContent = collapsed ? "▸" : "▾";
+      opsCollapseBtn.textContent = collapsed ? "Expand ^" : "Collapse v";
       opsCollapseBtn.setAttribute("aria-expanded", String(!collapsed));
+      opsCollapseBtn.setAttribute("aria-label", collapsed ? "Expand top bar" : "Collapse top bar");
     }
     localStorage.setItem(OPS_COLLAPSE_KEY, collapsed ? "1" : "0");
     syncOpsBarOffset();
+  }
+
+  function bindDisclaimerDismiss() {
+    if (!opsDisclaimer || !opsDisclaimerCloseBtn) return;
+    opsDisclaimerCloseBtn.addEventListener("click", function () {
+      opsDisclaimer.classList.add("is-dismissed");
+      syncOpsBarOffset();
+    });
   }
 
   function bindOpsBarActions() {
@@ -843,8 +854,10 @@
   renderTimelineLabels(readTimeline());
   bindTopStampButtons();
   bindSuspectControls();
+  bindDisclaimerDismiss();
   bindOpsCellExpansion();
   bindOpsBarActions();
   syncOpsBarOffset();
   evaluateAndRender();
 })();
+

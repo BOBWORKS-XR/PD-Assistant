@@ -55,7 +55,8 @@
         </div>
       </div>
       <div class="ops-disclaimer">
-        Disclaimer: This is not yet approved for police duty. Test or reference purposes only.
+        <span>Disclaimer: This is not yet approved for police duty. Test or reference purposes only.</span>
+        <button type="button" class="ops-disclaimer-close" aria-label="Dismiss disclaimer">X</button>
       </div>
       <div class="ops-tabs-row">
         <nav class="ops-tabs" aria-label="Assistant Tabs">
@@ -64,7 +65,15 @@
         </nav>
         <div class="ops-tabs-actions">
           <button type="button" id="ops-clear-btn" class="danger-btn">CLEAR</button>
-          <button type="button" id="ops-collapse-btn" class="secondary-btn ops-collapse-btn" aria-expanded="true">▾</button>
+          <button
+            type="button"
+            id="ops-collapse-btn"
+            class="secondary-btn ops-collapse-btn"
+            aria-expanded="true"
+            aria-label="Collapse top bar"
+          >
+            Collapse v
+          </button>
         </div>
       </div>
     </header>
@@ -373,3 +382,4 @@
     <script src="./app.js"></script>
   </body>
 </html>
+

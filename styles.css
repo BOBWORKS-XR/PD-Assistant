@@ -148,7 +148,8 @@ body {
 }
 
 .ops-disclaimer {
-  padding: 6px 10px;
+  position: relative;
+  padding: 6px 36px 6px 10px;
   text-align: center;
   font-size: 11px;
   font-weight: 800;
@@ -158,16 +159,50 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.ops-disclaimer.is-dismissed {
+  display: none;
+}
+
+.ops-disclaimer-close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  min-width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ops-disclaimer-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .ops-stamps {
   max-width: 1300px;
   margin: 0 auto;
   padding: 0 10px 6px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
   gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .ops-stamp-card {
+  flex: 0 0 260px;
+  min-width: 220px;
   border: 1px solid var(--context-line);
   border-radius: 8px;
   background: var(--panel);
@@ -207,23 +242,25 @@ body {
   max-width: 1300px;
   margin: 0 auto;
   padding: 7px 10px 8px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 
 .ops-tabs {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .ops-tabs-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .ops-tab {
@@ -248,8 +285,12 @@ body {
 }
 
 .ops-collapse-btn {
-  min-width: 36px;
-  padding: 0 8px;
+  min-width: 98px;
+  padding: 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .danger-btn {
@@ -404,8 +445,8 @@ button {
 }
 
 .secondary-btn.ops-collapse-btn {
-  min-width: 36px;
-  padding: 0 8px;
+  min-width: 98px;
+  padding: 0 10px;
 }
 
 .small-btn {
@@ -674,10 +715,6 @@ code {
     --ops-bar-offset: 156px;
   }
 
-  .ops-stamps {
-    grid-template-columns: 1fr 1fr;
-  }
-
   .ops-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -697,17 +734,52 @@ code {
   }
 
   .ops-tabs-row {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 6px 8px 7px;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ops-tabs {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .ops-tabs-actions {
+    gap: 5px;
+  }
+
+  .ops-tab {
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .danger-btn {
+    min-width: 58px;
+    font-size: 11px;
+  }
+
+  .secondary-btn.ops-collapse-btn {
+    min-width: 86px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .ops-stamp-card {
+    flex: 0 0 200px;
+    min-width: 200px;
   }
 
   .ops-stamps {
-    grid-template-columns: 1fr;
-  }
-
-  .ops-stamp-row {
-    grid-template-columns: 1fr;
-    align-items: start;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .ops-grid {
