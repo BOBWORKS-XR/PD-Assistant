@@ -41,7 +41,11 @@
 
   function initTheme() {
     var saved = localStorage.getItem("epical_pd_theme");
-    applyTheme(saved === "dark" ? "dark" : "light");
+    var theme = saved === "light" ? "light" : "dark";
+    if (!saved) {
+      localStorage.setItem("epical_pd_theme", "dark");
+    }
+    applyTheme(theme);
   }
 
   function toggleTheme() {

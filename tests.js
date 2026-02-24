@@ -87,6 +87,7 @@ for (const scenario of scenarios) {
   console.log("Blocked:", result.gate.blocked.length ? result.gate.blocked.join(" | ") : "No");
   console.log("Arrest reasons:", result.arrestReasons.length ? result.arrestReasons.join(" ; ") : "None");
   console.log("Offences:", result.likelyOffences.length ? result.likelyOffences.join(" ; ") : "None");
+  console.log("Quick ref:", result.quickReference.primaryAction, "|", result.quickReference.disposal);
   console.log("Speed profile:", result.risk.speedProfile.speedLimit, "limit,", result.risk.speedProfile.overLimit, "over");
   console.log(
     "Disposals:",

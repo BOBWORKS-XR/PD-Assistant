@@ -818,6 +818,58 @@
     return notes;
   }
 
+  function humanizeLabel(value) {
+    return String(value || "")
+      .replace(/_/g, " ")
+      .trim();
+  }
+
+  function getTopDisposal(disposals) {
+    if (!Array.isArray(disposals) || disposals.length === 0) {
+      return "Review with supervisor";
+    }
+    var first = disposals[0];
+    if (typeof first === "string") return first;
+    return first.method || "Review with supervisor";
+  }
+
+  function buildQuickReference(scene, risk, gate, sections, immediateActions, disposals, arrestReasons, likelyOffences) {
+    var primaryAction = "Stabilise scene and gather articulable facts.";
+    if (Array.isArray(immediateActions) && immediateActions.length > 0) {
+      primaryAction = immediateActions[0];
+    }
+
+    var legalAnchor = "No specific section triggered yet.";
+    if (Array.isArray(sections) && sections.length > 0) {
+      legalAnchor = sections[0];
+    }
+
+    var arrestCall = "No immediate arrest necessity indicator.";
+    if (Array.isArray(gate.blocked) && gate.blocked.length > 0) {
+      arrestCall = "Blocked scene path: reset and re-run with compliant conditions.";
+    } else if (Array.isArray(arrestReasons) && arrestReasons.length > 0) {
+      arrestCall = "Arrest likely if necessity sustained: " + arrestReasons[0] + ".";
+    } else if (risk.level === "high" || risk.level === "critical") {
+      arrestCall = "High risk scene: contain first, decide arrest necessity next.";
+    }
+
+    var topOffence = "No primary offence captured.";
+    if (Array.isArray(likelyOffences) && likelyOffences.length > 0) {
+      topOffence = likelyOffences[0];
+    }
+
+    return {
+      incident: humanizeLabel(scene.incidentType),
+      riskTag: risk.level.toUpperCase(),
+      speedLine: "Speed " + scene.speedMph + " mph / limit " + risk.speedProfile.speedLimit + " mph",
+      primaryAction: primaryAction,
+      legalAnchor: legalAnchor,
+      arrestCall: arrestCall,
+      disposal: getTopDisposal(disposals),
+      primaryOffence: topOffence,
+    };
+  }
+
   function evaluateScene(rawInput) {
     var scene = normalizeScene(rawInput);
     var log = formatLocalTimestamp();
@@ -833,6 +885,16 @@
     var disposals = buildDisposals(scene, risk, grounds, contexts, arrestReasons, gate.blocked.length);
     var evidence = buildEvidenceChecklist(scene, contexts, grounds);
     var rationale = buildRationale(scene, risk, grounds);
+    var quickReference = buildQuickReference(
+      scene,
+      risk,
+      gate,
+      sections,
+      immediateActions,
+      disposals,
+      arrestReasons,
+      likelyOffences
+    );
 
     return {
       log: log,
@@ -851,6 +913,7 @@
       disposals: disposals,
       evidence: evidence,
       rationale: rationale,
+      quickReference: quickReference,
     };
   }
 

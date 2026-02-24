@@ -98,6 +98,40 @@
     return renderList("Top Risk Drivers", top);
   }
 
+  function renderQuickReference(ref) {
+    if (!ref) return "";
+    return (
+      '<div class="quick-ref">' +
+      "<h3>Quick Reference</h3>" +
+      '<div class="quick-grid">' +
+      '<p class="quick-item"><strong>Incident:</strong> ' +
+      ref.incident +
+      " | " +
+      ref.riskTag +
+      "</p>" +
+      '<p class="quick-item"><strong>Speed:</strong> ' +
+      ref.speedLine +
+      "</p>" +
+      '<p class="quick-item"><strong>Primary Action:</strong> ' +
+      ref.primaryAction +
+      "</p>" +
+      '<p class="quick-item"><strong>Legal Anchor:</strong> ' +
+      ref.legalAnchor +
+      "</p>" +
+      '<p class="quick-item"><strong>Arrest Call:</strong> ' +
+      ref.arrestCall +
+      "</p>" +
+      '<p class="quick-item"><strong>Top Disposal:</strong> ' +
+      ref.disposal +
+      "</p>" +
+      '<p class="quick-item"><strong>Primary Offence:</strong> ' +
+      ref.primaryOffence +
+      "</p>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
   function renderContextChips(contexts, scene) {
     var chips = [];
     chips.push("Mode: " + scene.mode);
@@ -204,6 +238,7 @@
       " mph (" +
       data.risk.speedProfile.overLimit +
       " over local limit)</p>" +
+      renderQuickReference(data.quickReference) +
       blockedHtml +
       warningHtml +
       renderRiskDrivers(data.risk.factors) +
@@ -244,7 +279,10 @@
 
   function initTheme() {
     var saved = localStorage.getItem("epical_pd_theme");
-    var theme = saved === "dark" ? "dark" : "light";
+    var theme = saved === "light" ? "light" : "dark";
+    if (!saved) {
+      localStorage.setItem("epical_pd_theme", "dark");
+    }
     applyTheme(theme);
   }
 

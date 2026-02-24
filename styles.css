@@ -289,6 +289,29 @@ code {
   white-space: normal;
 }
 
+.quick-ref {
+  margin: 8px 0 10px;
+  border: 1px solid var(--secondary-line);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--secondary-bg);
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.quick-item {
+  margin: 0;
+  color: var(--muted);
+}
+
+.quick-item strong {
+  color: var(--ink);
+}
+
 .next-step {
   margin-top: 8px;
   border: 1px solid var(--secondary-line);
@@ -327,7 +350,8 @@ code {
 
 @media (max-width: 640px) {
   .grid,
-  .info-bar {
+  .info-bar,
+  .quick-grid {
     grid-template-columns: 1fr;
   }
 }
