@@ -8,6 +8,11 @@
   </head>
   <body>
     <header class="ops-bar" id="ops-bar">
+      <div class="ops-meta">
+        <span id="ops-officer">Officer: Unassigned</span>
+        <span id="ops-officer-patrol">Officer Patrol: Unset</span>
+        <span id="ops-suspects">Suspects: None listed</span>
+      </div>
       <div class="ops-grid">
         <div class="ops-cell">
           <span class="ops-label">Top Point</span>
@@ -46,6 +51,51 @@
 
         <form id="scene-form">
           <fieldset>
+            <legend>Officer Profile (Saved Locally)</legend>
+            <div class="grid">
+              <label>
+                Officer Name
+                <input type="text" name="officerName" placeholder="Tom Workingston" />
+              </label>
+              <label>
+                Rank
+                <select name="officerRank">
+                  <option value="spc">Student PC</option>
+                  <option value="pc">Police Constable</option>
+                  <option value="sgt">Sergeant</option>
+                  <option value="insp">Inspector</option>
+                  <option value="ci">Chief Inspector</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid">
+              <label>
+                Officer Number
+                <input type="text" name="officerNumber" placeholder="110" />
+              </label>
+              <label>
+                Badge / Callsign (Auto)
+                <input type="text" id="officer-callsign" readonly value="SPC" />
+              </label>
+            </div>
+
+            <div class="grid">
+              <label>
+                Current Patrol Mode (Officer)
+                <select name="officerPatrolMode">
+                  <option value="response_vehicle">Response Vehicle</option>
+                  <option value="foot_patrol">Foot Patrol</option>
+                  <option value="traffic_unit">Traffic Unit</option>
+                  <option value="motor_unit">Motor Unit</option>
+                  <option value="custody">Custody</option>
+                  <option value="plain_clothes">Plain Clothes</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
             <legend>Primary Scene</legend>
             <label>
               Location / Street
@@ -54,10 +104,12 @@
 
             <div class="grid">
               <label>
-                Patrol Mode
+                Suspect Stopped On
                 <select name="mode">
                   <option value="foot">On foot</option>
-                  <option value="vehicle">In vehicle</option>
+                  <option value="vehicle">In vehicle (car/van)</option>
+                  <option value="motorcycle">On motorcycle</option>
+                  <option value="bicycle">On bicycle</option>
                 </select>
               </label>
 
@@ -121,6 +173,15 @@
 
           <fieldset>
             <legend>Identity / Compliance Factors</legend>
+            <div class="suspect-header">
+              <span class="suspect-title">Suspect Name(s)</span>
+              <button type="button" id="add-suspect" class="secondary-btn small-btn">+ Add</button>
+            </div>
+            <div id="suspect-list" class="suspect-list">
+              <div class="suspect-row">
+                <input class="suspect-name-input" type="text" name="suspectNames" placeholder="Suspect name or identifier" />
+              </div>
+            </div>
             <label><input type="checkbox" name="refusesProvideId" /> Not willing to provide ID / name / address</label>
             <label><input type="checkbox" name="suspectedFalseIdentity" /> Suspected false details provided</label>
             <label><input type="checkbox" name="noFixedAddress" /> No fixed or verifiable address</label>

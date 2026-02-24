@@ -56,6 +56,23 @@
     trafficLightsGiveWay: true,
   };
 
+  var OFFICER_RANK_META = {
+    spc: { label: "Student PC", prefix: "SPC" },
+    pc: { label: "Police Constable", prefix: "PC" },
+    sgt: { label: "Sergeant", prefix: "SGT" },
+    insp: { label: "Inspector", prefix: "INSP" },
+    ci: { label: "Chief Inspector", prefix: "CI" },
+  };
+
+  var OFFICER_PATROL_LABELS = {
+    response_vehicle: "Response Vehicle",
+    foot_patrol: "Foot Patrol",
+    traffic_unit: "Traffic Unit",
+    motor_unit: "Motor Unit",
+    custody: "Custody",
+    plain_clothes: "Plain Clothes",
+  };
+
   function uniquePush(list, value) {
     if (list.indexOf(value) === -1) {
       list.push(value);
@@ -113,6 +130,11 @@
         incidentType: "suspicious_person",
         behavior: "compliant",
         publicDensity: "low",
+        officerName: "",
+        officerRank: "spc",
+        officerNumber: "",
+        officerPatrolMode: "response_vehicle",
+        suspectNames: [],
         grounds: [],
         pdOnDuty: 0,
         groupSize: 1,
@@ -163,6 +185,12 @@
     scene.failedStopSignals = clamp(Math.floor(toNumber(scene.failedStopSignals, 0)), 0, 20);
     scene.drugQuantityGrams = clamp(toNumber(scene.drugQuantityGrams, 0), 0, 100000);
     scene.seizedCashGbp = clamp(toNumber(scene.seizedCashGbp, 0), 0, 100000000);
+    scene.suspectNames = normalizeSuspectNames(scene.suspectNames);
+    scene.officerProfile = buildOfficerProfile(scene);
+    scene.officerName = scene.officerProfile.name;
+    scene.officerRank = scene.officerProfile.rankKey;
+    scene.officerNumber = scene.officerProfile.number;
+    scene.officerPatrolMode = scene.officerProfile.patrolMode;
 
     if (!Array.isArray(scene.grounds)) {
       scene.grounds = [];
@@ -171,9 +199,72 @@
     return scene;
   }
 
+  function normalizeSuspectNames(values) {
+    var list = [];
+    if (Array.isArray(values)) {
+      list = values;
+    } else if (typeof values === "string" && values.trim() !== "") {
+      list = values.split(",");
+    }
+
+    return list
+      .map(function (name) {
+        return String(name || "").trim();
+      })
+      .filter(function (name) {
+        return name.length > 0;
+      })
+      .slice(0, 12);
+  }
+
+  function sanitizeOfficerNumber(value) {
+    return String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 10);
+  }
+
+  function getOfficerPatrolLabel(mode) {
+    if (OFFICER_PATROL_LABELS[mode]) return OFFICER_PATROL_LABELS[mode];
+    return humanizeLabel(mode || "unassigned");
+  }
+
+  function buildOfficerProfile(input) {
+    var rankKey = String((input && input.officerRank) || "spc").toLowerCase();
+    if (!OFFICER_RANK_META[rankKey]) rankKey = "spc";
+    var rankMeta = OFFICER_RANK_META[rankKey];
+    var number = sanitizeOfficerNumber(input && input.officerNumber);
+    var callsign = number ? rankMeta.prefix + number : rankMeta.prefix;
+    var name = String((input && input.officerName) || "").trim();
+    var patrolMode = String((input && input.officerPatrolMode) || "response_vehicle");
+    var patrolLabel = getOfficerPatrolLabel(patrolMode);
+    var displayName = name || "Unassigned";
+
+    return {
+      rankKey: rankKey,
+      rankLabel: rankMeta.label,
+      rankPrefix: rankMeta.prefix,
+      number: number,
+      callsign: callsign,
+      name: name,
+      displayName: displayName,
+      patrolMode: patrolMode,
+      patrolLabel: patrolLabel,
+      display: callsign + " " + displayName,
+    };
+  }
+
+  function summarizeSuspects(names) {
+    if (!Array.isArray(names) || names.length === 0) return "None listed";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names[0] + " and " + names[1];
+    return names[0] + ", " + names[1] + " +" + (names.length - 2) + " more";
+  }
+
   function deriveContexts(scene) {
     var hasDrugGround = scene.grounds.indexOf("smell_drugs") !== -1 || scene.grounds.indexOf("drug_paraphernalia") !== -1;
-    var vehicleContext = scene.mode === "vehicle" || scene.incidentType === "traffic_stop" || scene.incidentType === "pursuit";
+    var motorVehicleMode = scene.mode === "vehicle" || scene.mode === "motorcycle";
+    var vehicleContext = motorVehicleMode || scene.incidentType === "traffic_stop" || scene.incidentType === "pursuit";
     var pursuitContext = scene.incidentType === "pursuit";
     var drugContext =
       hasDrugGround ||
@@ -183,6 +274,7 @@
       scene.incidentType === "traffic_stop";
     return {
       hasDrugGround: hasDrugGround,
+      motorVehicleMode: motorVehicleMode,
       vehicleContext: vehicleContext,
       pursuitContext: pursuitContext,
       drugContext: drugContext,
@@ -1054,7 +1146,7 @@
     return evidence;
   }
 
-  function buildRationale(scene, risk, grounds) {
+  function buildRationale(scene, risk, grounds, contexts) {
     var notes = [];
     var speedProfile = risk.speedProfile || computeSpeedProfile(scene);
     notes.push("Server rule gates are applied before tactical or legal suggestions.");
@@ -1071,7 +1163,7 @@
         CITY_POLICY.cashOkayMaxGbp +
         "."
     );
-    if (scene.mode === "vehicle" || scene.incidentType === "traffic_stop" || scene.incidentType === "pursuit") {
+    if (contexts.vehicleContext) {
       notes.push(
         "Recorded speed check: " +
           scene.speedMph +
@@ -1249,6 +1341,7 @@
     likelyOffences,
     paceTriggers,
     triggerPointers,
+    contexts,
     identityContext
   ) {
     var primaryAction = "Stabilise scene and gather articulable facts.";
@@ -1293,11 +1386,13 @@
 
     var faceCovering = identityContext.faceCoveringBasis;
     var vehicleStopStatus = "Not a vehicle stop scene.";
-    if (scene.mode === "vehicle" || scene.incidentType === "traffic_stop" || scene.incidentType === "pursuit") {
+    if (contexts.vehicleContext) {
       vehicleStopStatus = identityContext.activeVehicleStop
         ? "Lawful vehicle stop context is active."
         : "Vehicle context present but lawful stop context is not yet confirmed.";
     }
+    var officerLine = scene.officerProfile.display + " | " + scene.officerProfile.patrolLabel;
+    var suspectLine = summarizeSuspects(scene.suspectNames);
 
     return {
       incident: humanizeLabel(scene.incidentType),
@@ -1313,6 +1408,8 @@
       idExpectation: idExpectation,
       faceCovering: faceCovering,
       vehicleStopStatus: vehicleStopStatus,
+      officerLine: officerLine,
+      suspectLine: suspectLine,
     };
   }
 
@@ -1366,7 +1463,7 @@
     var tacticalActions = buildTacticalActions(scene, risk, contexts);
     var disposals = buildDisposals(scene, risk, grounds, contexts, arrestReasons, gate.blocked.length);
     var evidence = buildEvidenceChecklist(scene, contexts, grounds);
-    var rationale = buildRationale(scene, risk, grounds);
+    var rationale = buildRationale(scene, risk, grounds, contexts);
     var paceTriggers = buildPaceTriggers(scene, contexts, grounds, arrestReasons, identityContext, necessityChecklist);
     var triggerPointers = buildTriggerPointers(scene, risk, grounds, gate, paceTriggers, contexts, identityContext);
     var topBarSummary = buildTopBarSummary(triggerPointers, immediateActions, sections, disposals);
@@ -1381,12 +1478,16 @@
       likelyOffences,
       paceTriggers,
       triggerPointers,
+      contexts,
       identityContext
     );
+    var suspectSummary = summarizeSuspects(scene.suspectNames);
 
     return {
       log: log,
       scene: scene,
+      officerProfile: scene.officerProfile,
+      suspectSummary: suspectSummary,
       contexts: contexts,
       grounds: grounds,
       risk: risk,
@@ -1412,6 +1513,8 @@
 
   return {
     normalizeScene: normalizeScene,
+    normalizeSuspectNames: normalizeSuspectNames,
+    buildOfficerProfile: buildOfficerProfile,
     deriveContexts: deriveContexts,
     evaluateScene: evaluateScene,
   };

@@ -68,6 +68,11 @@
     var overLimit = Math.max(0, (caseData.scene.speedMph || 0) - speedLimit);
 
     caseSummary.innerHTML =
+      "<p><strong>Officer:</strong> " +
+      formatOfficerIdentity(caseData) +
+      " | <strong>Suspects:</strong> " +
+      formatSuspectSummary(caseData) +
+      "</p>" +
       "<p><strong>Scene:</strong> " +
       (caseData.scene.location || "Unknown") +
       " | <strong>Risk:</strong> " +
@@ -92,11 +97,29 @@
       ")</p>";
   }
 
+  function formatOfficerIdentity(caseData) {
+    if (caseData && caseData.officerProfile) {
+      return caseData.officerProfile.display + " (" + caseData.officerProfile.patrolLabel + ")";
+    }
+    return "Unknown";
+  }
+
+  function formatSuspectSummary(caseData) {
+    if (caseData && Array.isArray(caseData.scene.suspectNames) && caseData.scene.suspectNames.length > 0) {
+      return caseData.scene.suspectNames.join(", ");
+    }
+    if (caseData && caseData.suspectSummary) return caseData.suspectSummary;
+    return "None listed";
+  }
+
   function buildDefaultIncidentSummary(caseData) {
     var pieces = [];
     pieces.push("Subject was processed following the linked action-card scene.");
     if (caseData.scene.incidentType) {
       pieces.push("Incident type recorded as " + caseData.scene.incidentType.replace(/_/g, " ") + ".");
+    }
+    if (Array.isArray(caseData.scene.suspectNames) && caseData.scene.suspectNames.length > 0) {
+      pieces.push("Suspect list: " + caseData.scene.suspectNames.join(", ") + ".");
     }
     if (caseData.arrestReasons && caseData.arrestReasons.length) {
       pieces.push("Arrest necessity indicators included: " + caseData.arrestReasons.join("; ") + ".");
@@ -140,7 +163,7 @@
   }
 
   function formatCurrency(amount) {
-    return "£" + numberOrZero(amount).toLocaleString("en-GB");
+    return "GBP " + numberOrZero(amount).toLocaleString("en-GB");
   }
 
   function buildLog(caseData, formValues) {
@@ -166,6 +189,7 @@
     lines.push("Location: " + formValues.arrestLocation);
     lines.push("Arresting Officer: " + formValues.arrestingOfficer);
     lines.push("Assisting Officers: " + formValues.assistingOfficers);
+    lines.push("Suspects: " + formatSuspectSummary(caseData));
     lines.push("");
 
     lines.push("INCIDENT SUMMARY");
@@ -313,6 +337,7 @@
 
     var incidentSummary = form.querySelector('textarea[name="incidentSummary"]');
     var chargesText = form.querySelector('textarea[name="chargesText"]');
+    var arrestingOfficer = form.querySelector('input[name="arrestingOfficer"]');
     var initialFine = form.querySelector('input[name="initialFine"]');
     var finalFine = form.querySelector('input[name="finalFine"]');
     var finalJail = form.querySelector('input[name="finalJailMonths"]');
@@ -320,6 +345,7 @@
 
     incidentSummary.value = buildDefaultIncidentSummary(caseData);
     chargesText.value = charges.join("; ");
+    arrestingOfficer.value = caseData.officerProfile ? caseData.officerProfile.display : "";
 
     if (caseData.scene.drugType === "cannabis" && caseData.scene.drugQuantityGrams > 0 && caseData.scene.drugQuantityGrams <= 15) {
       finalJail.value = "0";
@@ -384,3 +410,4 @@
 
   init();
 })();
+

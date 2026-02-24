@@ -8,12 +8,34 @@
   var opsUrgentAction = document.getElementById("ops-urgent-action");
   var opsKeySection = document.getElementById("ops-key-section");
   var opsNextStep = document.getElementById("ops-next-step");
+  var opsOfficer = document.getElementById("ops-officer");
+  var opsOfficerPatrol = document.getElementById("ops-officer-patrol");
+  var opsSuspects = document.getElementById("ops-suspects");
+  var suspectList = document.getElementById("suspect-list");
+  var addSuspectBtn = document.getElementById("add-suspect");
+  var officerNameInput = form.querySelector('input[name="officerName"]');
+  var officerRankInput = form.querySelector('select[name="officerRank"]');
+  var officerNumberInput = form.querySelector('input[name="officerNumber"]');
+  var officerPatrolInput = form.querySelector('select[name="officerPatrolMode"]');
+  var officerCallsignInput = document.getElementById("officer-callsign");
+  var OFFICER_PROFILE_KEY = "epical_pd_officer_profile";
 
   function getCheckboxValues(formEl, name) {
     return Array.prototype.slice
       .call(formEl.querySelectorAll('input[name="' + name + '"]:checked'))
       .map(function (el) {
         return el.value;
+      });
+  }
+
+  function getSuspectNames(formEl) {
+    return Array.prototype.slice
+      .call(formEl.querySelectorAll(".suspect-name-input"))
+      .map(function (el) {
+        return (el.value || "").trim();
+      })
+      .filter(function (name) {
+        return name.length > 0;
       });
   }
 
@@ -25,6 +47,11 @@
       incidentType: formData.get("incidentType"),
       behavior: formData.get("behavior"),
       publicDensity: formData.get("publicDensity"),
+      officerName: formData.get("officerName") || "",
+      officerRank: formData.get("officerRank") || "spc",
+      officerNumber: formData.get("officerNumber") || "",
+      officerPatrolMode: formData.get("officerPatrolMode") || "response_vehicle",
+      suspectNames: getSuspectNames(formEl),
       grounds: getCheckboxValues(formEl, "grounds"),
       pdOnDuty: Number(formData.get("pdOnDuty")),
       groupSize: Number(formData.get("groupSize")),
@@ -121,6 +148,12 @@
       '<div class="quick-ref">' +
       "<h3>Quick Reference</h3>" +
       '<div class="quick-grid">' +
+      '<p class="quick-item"><strong>Officer:</strong> ' +
+      ref.officerLine +
+      "</p>" +
+      '<p class="quick-item"><strong>Suspects:</strong> ' +
+      ref.suspectLine +
+      "</p>" +
       '<p class="quick-item"><strong>Incident:</strong> ' +
       ref.incident +
       " | " +
@@ -205,7 +238,14 @@
 
   function renderContextChips(contexts, scene) {
     var chips = [];
-    chips.push("Mode: " + scene.mode);
+    if (scene.officerProfile) {
+      chips.push("Officer: " + scene.officerProfile.callsign);
+      chips.push("Officer patrol: " + scene.officerProfile.patrolLabel);
+    }
+    if (scene.suspectNames && scene.suspectNames.length > 0) {
+      chips.push("Suspects listed: " + scene.suspectNames.length);
+    }
+    chips.push("Stopped on: " + scene.mode);
     chips.push("Incident: " + scene.incidentType);
     if (contexts.vehicleContext) chips.push("Vehicle context");
     if (contexts.pursuitContext) chips.push("Pursuit context");
@@ -233,7 +273,8 @@
   }
 
   function toggleDynamicFieldsets(scene) {
-    var contexts = window.EpicalEngine.deriveContexts(scene);
+    var normalizedScene = window.EpicalEngine.normalizeScene(scene);
+    var contexts = window.EpicalEngine.deriveContexts(normalizedScene);
     var visibility = {
       vehicleContext: contexts.vehicleContext,
       pursuitContext: contexts.pursuitContext,
@@ -249,7 +290,7 @@
       });
     });
 
-    renderContextChips(contexts, scene);
+    renderContextChips(contexts, normalizedScene);
   }
 
   function saveForInvestigations(data) {
@@ -263,6 +304,85 @@
       );
     } catch (error) {
       console.error("Unable to save case context", error);
+    }
+  }
+
+  function saveOfficerProfile(scene) {
+    try {
+      localStorage.setItem(
+        OFFICER_PROFILE_KEY,
+        JSON.stringify({
+          officerName: scene.officerName || "",
+          officerRank: scene.officerRank || "spc",
+          officerNumber: scene.officerNumber || "",
+          officerPatrolMode: scene.officerPatrolMode || "response_vehicle",
+        })
+      );
+    } catch (error) {
+      console.error("Unable to save officer profile", error);
+    }
+  }
+
+  function restoreOfficerProfile() {
+    try {
+      var raw = localStorage.getItem(OFFICER_PROFILE_KEY);
+      if (!raw) return;
+      var profile = JSON.parse(raw);
+      if (officerNameInput && profile.officerName) officerNameInput.value = profile.officerName;
+      if (officerRankInput && profile.officerRank) officerRankInput.value = profile.officerRank;
+      if (officerNumberInput && profile.officerNumber) officerNumberInput.value = profile.officerNumber;
+      if (officerPatrolInput && profile.officerPatrolMode) officerPatrolInput.value = profile.officerPatrolMode;
+    } catch (error) {
+      console.error("Unable to restore officer profile", error);
+    }
+  }
+
+  function updateCallsignPreview(scene) {
+    if (!officerCallsignInput) return;
+    if (!window.EpicalEngine || typeof window.EpicalEngine.buildOfficerProfile !== "function") return;
+    var profile = window.EpicalEngine.buildOfficerProfile(scene);
+    officerCallsignInput.value = profile.callsign;
+  }
+
+  function appendSuspectRow(value) {
+    if (!suspectList) return;
+    var row = document.createElement("div");
+    row.className = "suspect-row";
+
+    var input = document.createElement("input");
+    input.className = "suspect-name-input";
+    input.type = "text";
+    input.name = "suspectNames";
+    input.placeholder = "Suspect name or identifier";
+    input.value = value || "";
+
+    var removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "secondary-btn suspect-remove";
+    removeBtn.textContent = "Remove";
+    removeBtn.setAttribute("aria-label", "Remove suspect row");
+
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    suspectList.appendChild(row);
+  }
+
+  function ensureSuspectRows() {
+    if (!suspectList) return;
+    if (suspectList.querySelectorAll(".suspect-row").length === 0) {
+      appendSuspectRow("");
+    }
+  }
+
+  function updateOpsMeta(data) {
+    if (opsOfficer && data.officerProfile) {
+      opsOfficer.textContent = "Officer: " + data.officerProfile.display;
+    }
+    if (opsOfficerPatrol && data.officerProfile) {
+      opsOfficerPatrol.textContent = "Officer Patrol: " + data.officerProfile.patrolLabel;
+    }
+    if (opsSuspects) {
+      opsSuspects.textContent = "Suspects: " + (data.suspectSummary || "None listed");
     }
   }
 
@@ -312,6 +432,14 @@
       data.grounds.summary +
       "</p></div>" +
       "</div>" +
+      "<p><strong>Officer:</strong> " +
+      data.officerProfile.display +
+      " | <strong>Patrol:</strong> " +
+      data.officerProfile.patrolLabel +
+      "</p>" +
+      "<p><strong>Suspects:</strong> " +
+      data.suspectSummary +
+      "</p>" +
       "<p><strong>Location:</strong> " +
       (data.scene.location || "Unknown") +
       "</p>" +
@@ -350,7 +478,7 @@
       opsKeySection.textContent = data.topBarSummary.keySection;
       opsNextStep.textContent = data.topBarSummary.nextStep;
     }
-
+    updateOpsMeta(data);
     syncOpsBarOffset();
     saveForInvestigations(data);
   }
@@ -359,6 +487,8 @@
     var firstPass = readForm(form);
     toggleDynamicFieldsets(firstPass);
     var scene = readForm(form);
+    updateCallsignPreview(scene);
+    saveOfficerProfile(scene);
     var output = window.EpicalEngine.evaluateScene(scene);
     render(output);
   }
@@ -392,6 +522,25 @@
     applyTheme(next);
   }
 
+  function bindSuspectControls() {
+    if (!addSuspectBtn || !suspectList) return;
+
+    addSuspectBtn.addEventListener("click", function () {
+      appendSuspectRow("");
+      evaluateAndRender();
+    });
+
+    suspectList.addEventListener("click", function (event) {
+      var target = event.target;
+      if (!(target instanceof HTMLElement) || !target.classList.contains("suspect-remove")) return;
+
+      var rows = suspectList.querySelectorAll(".suspect-row");
+      if (rows.length <= 1) return;
+      target.closest(".suspect-row").remove();
+      evaluateAndRender();
+    });
+  }
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     evaluateAndRender();
@@ -412,6 +561,9 @@
   window.addEventListener("resize", syncOpsBarOffset);
 
   initTheme();
+  restoreOfficerProfile();
+  ensureSuspectRows();
+  bindSuspectControls();
   syncOpsBarOffset();
   evaluateAndRender();
 })();

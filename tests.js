@@ -35,6 +35,29 @@ const scenarios = [
     },
   },
   {
+    name: "Officer profile with multiple suspects",
+    input: {
+      location: "Sinner Street Police Station",
+      mode: "vehicle",
+      incidentType: "traffic_stop",
+      behavior: "evasive",
+      officerName: "Tom Workingston",
+      officerRank: "spc",
+      officerNumber: "110",
+      officerPatrolMode: "traffic_unit",
+      suspectNames: ["Tommy Egan", "Unknown Male"],
+      pdOnDuty: 6,
+      groupSize: 2,
+      grounds: ["witness_statement"],
+      speedMph: 61,
+      roadType: "urban",
+      trafficDensity: "medium",
+      vehiclePulledOver: true,
+      refusesProvideId: true,
+      refusesVehicleDocs: true,
+    },
+  },
+  {
     name: "Cash over threshold with drug indicators",
     input: {
       location: "Little Seoul",
@@ -154,6 +177,8 @@ for (const scenario of scenarios) {
   console.log("Local Log:", result.log.local, "| TZ:", result.log.timezone);
   console.log("Risk:", result.risk.level.toUpperCase(), "Score:", result.risk.score);
   console.log("Grounds:", result.grounds.level.toUpperCase(), "Score:", result.grounds.score);
+  console.log("Officer:", result.officerProfile.display, "| Patrol:", result.officerProfile.patrolLabel);
+  console.log("Suspects:", result.suspectSummary);
   console.log("Blocked:", result.gate.blocked.length ? result.gate.blocked.join(" | ") : "No");
   console.log("Arrest reasons:", result.arrestReasons.length ? result.arrestReasons.join(" ; ") : "None");
   console.log("Offences:", result.likelyOffences.length ? result.likelyOffences.join(" ; ") : "None");

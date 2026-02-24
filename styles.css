@@ -68,10 +68,29 @@ body {
   box-shadow: 0 8px 20px rgba(16, 32, 50, 0.14);
 }
 
+.ops-meta {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 14px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ops-meta span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--info-bg);
+}
+
 .ops-grid {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 8px 14px;
+  padding: 8px 14px 10px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
@@ -221,6 +240,12 @@ button {
   min-width: 108px;
 }
 
+.small-btn {
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
 button:hover {
   filter: brightness(1.03);
 }
@@ -233,6 +258,40 @@ button:hover {
 
 .dynamic-fieldset.is-hidden {
   display: none;
+}
+
+.suspect-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.suspect-title {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.suspect-list {
+  display: grid;
+  gap: 8px;
+}
+
+.suspect-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.suspect-remove {
+  min-width: 90px;
+  padding: 8px 10px;
+}
+
+#officer-callsign {
+  background: var(--info-bg);
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .context-strip {
@@ -432,7 +491,7 @@ code {
 
 @media (max-width: 1024px) {
   :root {
-    --ops-bar-offset: 150px;
+    --ops-bar-offset: 184px;
   }
 
   .ops-grid {
@@ -446,7 +505,7 @@ code {
 
 @media (max-width: 640px) {
   :root {
-    --ops-bar-offset: 248px;
+    --ops-bar-offset: 288px;
   }
 
   .ops-grid {
