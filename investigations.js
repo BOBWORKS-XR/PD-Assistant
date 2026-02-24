@@ -4,6 +4,9 @@
   var output = document.getElementById("investigation-log");
   var arrestTimeInput = document.getElementById("arrest-time");
   var arrestLocationInput = document.getElementById("arrest-location");
+  var timeStopInput = document.getElementById("time-stop");
+  var timeSearchInput = document.getElementById("time-search");
+  var timeArrestEventInput = document.getElementById("time-arrest-event");
   var copyButton = document.getElementById("copy-log");
   var themeToggle = document.getElementById("theme-toggle");
 
@@ -155,7 +158,10 @@
   function readForm(caseData) {
     var fd = new FormData(form);
     return {
-      arrestTime: fd.get("arrestTime") || formatCityDateTime(),
+      arrestTime: fd.get("arrestTime") || fd.get("timeArrestEvent") || formatCityDateTime(),
+      timeStop: fd.get("timeStop") || "",
+      timeSearch: fd.get("timeSearch") || "",
+      timeArrestEvent: fd.get("timeArrestEvent") || fd.get("arrestTime") || "",
       arrestLocation: fd.get("arrestLocation") || caseData.scene.location || "Unknown",
       arrestingOfficer: fd.get("arrestingOfficer") || "Unknown",
       assistingOfficers: fd.get("assistingOfficers") || "None recorded",
@@ -206,6 +212,12 @@
     lines.push("Arresting Officer: " + formValues.arrestingOfficer);
     lines.push("Assisting Officers: " + formValues.assistingOfficers);
     lines.push("Suspects: " + formatSuspectSummary(caseData));
+    lines.push("");
+
+    lines.push("TIMELINE STAMPS (UK)");
+    lines.push("Time of stop: " + (formValues.timeStop || "Not stamped"));
+    lines.push("Time of search: " + (formValues.timeSearch || "Not stamped"));
+    lines.push("Time of arrest: " + (formValues.timeArrestEvent || "Not stamped"));
     lines.push("");
 
     lines.push("INCIDENT SUMMARY");
@@ -372,6 +384,31 @@
     }
   }
 
+  function refreshOutput(caseData) {
+    output.value = buildLog(caseData, readForm(caseData));
+  }
+
+  function stampTimelineField(targetInput, caseData) {
+    if (!targetInput) return;
+    var stamp = formatCityDateTime();
+    targetInput.value = stamp;
+    if (targetInput === timeArrestEventInput && arrestTimeInput) {
+      arrestTimeInput.value = stamp;
+    }
+    refreshOutput(caseData);
+  }
+
+  function bindStampButtons(caseData) {
+    form.querySelectorAll(".stamp-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var targetId = button.getAttribute("data-stamp-target");
+        if (!targetId) return;
+        var input = document.getElementById(targetId);
+        stampTimelineField(input, caseData);
+      });
+    });
+  }
+
   function disableForm() {
     form.querySelectorAll("input,select,textarea,button").forEach(function (el) {
       el.disabled = true;
@@ -380,8 +417,7 @@
 
   function handleGenerate(event, caseData) {
     event.preventDefault();
-    var values = readForm(caseData);
-    output.value = buildLog(caseData, values);
+    refreshOutput(caseData);
   }
 
   function init() {
@@ -399,7 +435,8 @@
     }
 
     initDefaults(caseData);
-    output.value = buildLog(caseData, readForm(caseData));
+    bindStampButtons(caseData);
+    refreshOutput(caseData);
 
     form.addEventListener("submit", function (event) {
       handleGenerate(event, caseData);

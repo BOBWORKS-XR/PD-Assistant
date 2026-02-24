@@ -271,6 +271,22 @@ button:hover {
   gap: 10px;
 }
 
+.stamp-grid {
+  grid-template-columns: 1fr;
+}
+
+.stamp-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.stamp-btn {
+  min-width: 132px;
+  white-space: nowrap;
+}
+
 .dynamic-fieldset.is-hidden {
   display: none;
 }
@@ -530,6 +546,10 @@ code {
   .grid,
   .info-bar,
   .quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stamp-row {
     grid-template-columns: 1fr;
   }
 }

@@ -28,7 +28,7 @@
             <legend>Arrest Details</legend>
             <div class="grid">
               <label>
-                Date/Time
+                Arrest Date/Time
                 <input type="text" name="arrestTime" id="arrest-time" />
               </label>
               <label>
@@ -50,6 +50,34 @@
               Warrant Numbers
               <input type="text" name="warrantNumbers" placeholder="Add warrant refs if applicable" />
             </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Key Timeline Stamps (UK)</legend>
+            <div class="grid stamp-grid">
+              <label>
+                Time of Stop
+                <div class="stamp-row">
+                  <input type="text" name="timeStop" id="time-stop" placeholder="[DD/MM/YY HH:MM]" />
+                  <button type="button" class="secondary-btn stamp-btn" data-stamp-target="time-stop">Stamp UK Time</button>
+                </div>
+              </label>
+              <label>
+                Time of Search
+                <div class="stamp-row">
+                  <input type="text" name="timeSearch" id="time-search" placeholder="[DD/MM/YY HH:MM]" />
+                  <button type="button" class="secondary-btn stamp-btn" data-stamp-target="time-search">Stamp UK Time</button>
+                </div>
+              </label>
+              <label>
+                Time of Arrest
+                <div class="stamp-row">
+                  <input type="text" name="timeArrestEvent" id="time-arrest-event" placeholder="[DD/MM/YY HH:MM]" />
+                  <button type="button" class="secondary-btn stamp-btn" data-stamp-target="time-arrest-event">Stamp UK Time</button>
+                </div>
+              </label>
+            </div>
+            <p class="muted">Use the stamp buttons to log timeline points in UK server time.</p>
           </fieldset>
 
           <fieldset>
