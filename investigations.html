@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EPICAL PD Investigations Handover</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="layout investigation-layout">
+      <section class="panel">
+        <h1>Investigations Handover</h1>
+        <p class="sub">UK-style RP continuation from live scene decision output</p>
+        <div id="case-summary">
+          <p class="muted">No case loaded yet. Generate an Action Card first in the main page.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Investigation Builder</h2>
+        <form id="investigation-form">
+          <div class="grid">
+            <label>
+              OIC / Callsign
+              <input type="text" name="oic" placeholder="PC-102 / Sgt-21" />
+            </label>
+            <label>
+              Suspect Identifier
+              <input type="text" name="suspectId" placeholder="Name / descriptor / plate link" />
+            </label>
+          </div>
+
+          <div class="grid">
+            <label>
+              Custody Status
+              <select name="custodyStatus">
+                <option value="detained_scene">Detained at scene</option>
+                <option value="in_custody">In custody</option>
+                <option value="voluntary_attendance">Voluntary attendance</option>
+                <option value="released_pending">Released pending investigation</option>
+              </select>
+            </label>
+            <label>
+              Arrest / Detention Time (Local)
+              <input type="text" name="arrestTime" id="arrest-time" />
+            </label>
+          </div>
+
+          <fieldset>
+            <legend>Interview and Procedure</legend>
+            <label><input type="checkbox" name="cautionGiven" checked /> Caution delivered</label>
+            <label><input type="checkbox" name="solicitorRequested" /> Solicitor requested</label>
+            <label><input type="checkbox" name="appropriateAdult" /> Appropriate adult required</label>
+            <label>
+              Interview Plan
+              <select name="interviewPlan">
+                <option value="prepared_interview">Prepared interview under caution</option>
+                <option value="initial_account_only">Initial account only</option>
+                <option value="no_comment_expected">Likely no-comment interview</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Lines of Enquiry</legend>
+            <label><input type="checkbox" name="loe" value="bwv_download" checked /> BWV download and review</label>
+            <label><input type="checkbox" name="loe" value="witness_statements" checked /> Witness statements</label>
+            <label><input type="checkbox" name="loe" value="cctv" /> CCTV / ANPR review</label>
+            <label><input type="checkbox" name="loe" value="scene_forensics" /> Scene forensics / continuity log</label>
+            <label><input type="checkbox" name="loe" value="vehicle_exam" /> Vehicle examination and damage photo set</label>
+            <label><input type="checkbox" name="loe" value="drug_weigh" /> Drug weigh + packaging continuity</label>
+            <label><input type="checkbox" name="loe" value="digital_intel" /> Digital intelligence checks</label>
+          </fieldset>
+
+          <label>
+            Supervisor Direction
+            <textarea name="supervisorDirection" rows="2" placeholder="Any Inspector/Sgt direction for case progression..."></textarea>
+          </label>
+
+          <label>
+            Handover Narrative
+            <textarea name="handoverNarrative" rows="3" placeholder="Short narrative for investigators/custody..."></textarea>
+          </label>
+
+          <div class="grid">
+            <button type="submit">Generate Investigation Log</button>
+            <button type="button" id="copy-log">Copy Log</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Generated Log</h2>
+        <textarea id="investigation-log" rows="20" readonly></textarea>
+      </section>
+    </main>
+
+    <script src="./investigations.js"></script>
+  </body>
+</html>

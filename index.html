@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EPICAL PD Assistant Local Test</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel">
+        <header class="panel-head">
+          <h1>EPICAL PD Assistant</h1>
+          <p class="sub">Dynamic scene workflow and deterministic RP outcomes</p>
+        </header>
+
+        <form id="scene-form">
+          <fieldset>
+            <legend>Primary Scene</legend>
+            <label>
+              Location / Street
+              <input type="text" name="location" placeholder="Mirror Park, Elgin Ave" required />
+            </label>
+
+            <div class="grid">
+              <label>
+                Patrol Mode
+                <select name="mode">
+                  <option value="foot">On foot</option>
+                  <option value="vehicle">In vehicle</option>
+                </select>
+              </label>
+
+              <label>
+                Incident Type
+                <select name="incidentType">
+                  <option value="suspicious_person">Suspicious person</option>
+                  <option value="traffic_stop">Traffic stop</option>
+                  <option value="public_disorder">Public disorder</option>
+                  <option value="assault_report">Assault report</option>
+                  <option value="weapon_sighting">Weapon sighting</option>
+                  <option value="pursuit">Vehicle pursuit</option>
+                  <option value="hostage">Hostage situation</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid">
+              <label>
+                Subject Behavior
+                <select name="behavior">
+                  <option value="compliant">Compliant</option>
+                  <option value="evasive">Evasive</option>
+                  <option value="aggressive">Aggressive</option>
+                  <option value="fleeing">Fleeing</option>
+                </select>
+              </label>
+
+              <label>
+                Public Density
+                <select name="publicDensity">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid">
+              <label>
+                PD On Duty
+                <input type="number" name="pdOnDuty" min="0" value="4" />
+              </label>
+              <label>
+                Number of Subjects
+                <input type="number" name="groupSize" min="1" value="1" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Grounds / Context</legend>
+            <label><input type="checkbox" name="grounds" value="smell_drugs" /> Smell of drugs</label>
+            <label><input type="checkbox" name="grounds" value="drug_paraphernalia" /> Drug paraphernalia seen</label>
+            <label><input type="checkbox" name="grounds" value="weapon_bulge" /> Weapon bulge / object print</label>
+            <label><input type="checkbox" name="grounds" value="stolen_vehicle_marker" /> Stolen vehicle marker</label>
+            <label><input type="checkbox" name="grounds" value="witness_statement" /> Credible witness statement</label>
+            <label><input type="checkbox" name="grounds" value="intel_link" /> Active intelligence link</label>
+            <label><input type="checkbox" name="grounds" value="admission_made" /> Subject admission made</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Live Risk Flags</legend>
+            <label><input type="checkbox" name="weaponSeen" /> Weapon seen</label>
+            <label><input type="checkbox" name="activeShots" /> Active shots fired</label>
+            <label><input type="checkbox" name="injuryPresent" /> Injury present</label>
+            <label><input type="checkbox" name="knownViolenceMarker" /> Known violence marker</label>
+            <label><input type="checkbox" name="subjectIntoxicated" /> Subject appears intoxicated</label>
+            <label><input type="checkbox" name="s60Authorized" /> s60 authorized area (RP event)</label>
+          </fieldset>
+
+          <fieldset class="dynamic-fieldset" data-show="vehicleContext">
+            <legend>Vehicle Dynamics</legend>
+            <div class="grid">
+              <label>
+                Current / Last Known Speed (mph)
+                <input type="number" name="speedMph" min="0" max="220" value="0" />
+              </label>
+
+              <label>
+                Road Type
+                <select name="roadType">
+                  <option value="urban">Urban</option>
+                  <option value="motorway">Motorway</option>
+                  <option value="rural">Rural</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid">
+              <label>
+                Traffic Density
+                <select name="trafficDensity">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+
+              <label>
+                Vehicle Condition
+                <select name="vehicleCondition">
+                  <option value="normal">Normal</option>
+                  <option value="smoking">Smoking</option>
+                  <option value="blown_tires">Blown tires</option>
+                  <option value="critical">Critical damage</option>
+                </select>
+              </label>
+            </div>
+
+            <label><input type="checkbox" name="vehicleAntisocial" /> Vehicle anti-social use (s59 route)</label>
+            <label><input type="checkbox" name="priorS59Warning" /> Existing active s59 warning</label>
+          </fieldset>
+
+          <fieldset class="dynamic-fieldset" data-show="pursuitContext">
+            <legend>Pursuit Metrics</legend>
+            <div class="grid">
+              <label>
+                Pursuit Duration (minutes)
+                <input type="number" name="pursuitDurationMin" min="0" max="120" value="0" />
+              </label>
+              <label>
+                Number of Failed Stop Signals
+                <input type="number" name="failedStopSignals" min="0" max="20" value="0" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="dynamic-fieldset" data-show="drugContext">
+            <legend>Drug Intelligence</legend>
+            <div class="grid">
+              <label>
+                Suspected Drug Type
+                <select name="drugType">
+                  <option value="unknown">Unknown</option>
+                  <option value="cannabis">Cannabis</option>
+                  <option value="class_b">Class B</option>
+                  <option value="class_a">Class A</option>
+                </select>
+              </label>
+              <label>
+                Estimated Quantity (grams)
+                <input type="number" name="drugQuantityGrams" min="0" step="0.1" value="0" />
+              </label>
+            </div>
+
+            <label>
+              Packaging Indicator
+              <select name="drugPackaging">
+                <option value="none">None / unknown</option>
+                <option value="personal">Personal amount</option>
+                <option value="split_bags">Multiple split bags</option>
+                <option value="dealer_pack">Dealer-style wraps</option>
+                <option value="bulk">Bulk package</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Server Rule Context</legend>
+            <label><input type="checkbox" name="amberZone" /> In amber zone</label>
+            <label><input type="checkbox" name="sceneStartedInAmber" /> Scene started here (amber zone)</label>
+            <label><input type="checkbox" name="medicalAttemptDuringActive" /> Player trying medical during active scene</label>
+            <label><input type="checkbox" name="taserHitTwo" /> Subject hit by taser twice</label>
+            <label><input type="checkbox" name="ehsKidnapAttempt" /> EHS kidnapping attempt</label>
+          </fieldset>
+
+          <label>
+            Notes
+            <textarea name="notes" rows="3" placeholder="Observed behavior / statements..."></textarea>
+          </label>
+
+          <div class="context-strip" id="context-strip"></div>
+          <button type="submit">Generate / Refresh Action Card</button>
+        </form>
+      </section>
+
+      <section class="panel result" id="result">
+        <h2>Action Card</h2>
+        <p class="sub">Live recommendations appear as you complete the form.</p>
+      </section>
+    </main>
+
+    <script src="./engine.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
