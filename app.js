@@ -419,7 +419,7 @@
       data.risk.level.toUpperCase() +
       " RISK</span><span>Score: " +
       data.risk.score +
-      "</span></div><p class=\"muted\">Local log time: " +
+      "</span></div><p class=\"muted\">UK log time: " +
       data.log.local +
       " (" +
       data.log.timezone +

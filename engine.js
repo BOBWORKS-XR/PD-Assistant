@@ -117,8 +117,8 @@
     var now = new Date();
     return {
       iso: now.toISOString(),
-      local: now.toLocaleString("en-GB", { hour12: false }),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Local",
+      local: now.toLocaleString("en-GB", { hour12: false, timeZone: "Europe/London" }),
+      timezone: "Europe/London (UK)",
     };
   }
 

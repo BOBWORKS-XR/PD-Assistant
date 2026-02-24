@@ -10,14 +10,29 @@
   var cautionText =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
 
+  function getUkDateParts(dateObj) {
+    var formatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    var parts = formatter.formatToParts(dateObj || new Date());
+    var map = {};
+    parts.forEach(function (part) {
+      if (part.type !== "literal") {
+        map[part.type] = part.value;
+      }
+    });
+    return map;
+  }
+
   function formatCityDateTime(dateObj) {
-    var d = dateObj || new Date();
-    var day = String(d.getDate()).padStart(2, "0");
-    var month = String(d.getMonth() + 1).padStart(2, "0");
-    var year = String(d.getFullYear()).slice(-2);
-    var hours = String(d.getHours()).padStart(2, "0");
-    var mins = String(d.getMinutes()).padStart(2, "0");
-    return "[" + day + "/" + month + "/" + year + " " + hours + ":" + mins + "]";
+    var uk = getUkDateParts(dateObj || new Date());
+    return "[" + uk.day + "/" + uk.month + "/" + uk.year + " " + uk.hour + ":" + uk.minute + "]";
   }
 
   function getStoredCase() {
@@ -80,11 +95,12 @@
       " (" +
       caseData.risk.score +
       ")</p>" +
-      "<p><strong>Local Log:</strong> " +
+      "<p><strong>UK Log:</strong> " +
       caseData.log.local +
       " (" +
       caseData.log.timezone +
       ")</p>" +
+      "<p><strong>Server Timezone:</strong> Europe/London (UK)</p>" +
       "<p><strong>Likely Offences:</strong> " +
       (offences.length ? offences.join("; ") : "None captured") +
       "</p>" +
@@ -395,13 +411,13 @@
         function () {
           copyButton.textContent = "Copied";
           setTimeout(function () {
-            copyButton.textContent = "Copy Record";
+            copyButton.textContent = "Copy Generated Crime Report";
           }, 1000);
         },
         function () {
           copyButton.textContent = "Copy failed";
           setTimeout(function () {
-            copyButton.textContent = "Copy Record";
+            copyButton.textContent = "Copy Generated Crime Report";
           }, 1000);
         }
       );
