@@ -721,9 +721,13 @@
       renderList("Suggested UK Sections", data.sections) +
       renderDisposalMethods(data.disposals) +
       renderList("Evidence Checklist", data.evidence) +
-      "<h3>Caution Text</h3><p><code>" +
+      "<h3>Caution (OG Doc Detail)</h3><p><strong>Arrest caution:</strong> <code>" +
       data.cautionText +
       "</code></p>" +
+      "<p><strong>Roadside report caution (NOW):</strong> <code>" +
+      (data.roadsideCautionText || data.cautionText) +
+      "</code></p>" +
+      renderList("Caution Delivery Notes", data.cautionDeliveryNotes || []) +
       renderList("Rationale", data.rationale) +
       '<div class="next-step">' +
       "<h3>Next Step</h3>" +

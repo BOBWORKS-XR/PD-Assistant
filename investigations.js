@@ -32,6 +32,13 @@
 
   var cautionText =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
+  var cautionRoadsideText =
+    "You do not have to say anything, but it may harm your defence if you do not mention now something which you later rely on in court. Anything you do say may be given in evidence.";
+  var cautionNotes = [
+    "Arrest caution format: state time and arrest reason, then deliver the WHEN QUESTIONED caution.",
+    "Roadside report (TOR): use the NOW caution and record any reply made.",
+    "After delivering caution, confirm understanding (e.g., \"Do you understand?\").",
+  ];
 
   function getUkDateParts(dateObj) {
     var formatter = new Intl.DateTimeFormat("en-GB", {
@@ -620,7 +627,12 @@
 
     lines.push("CAUTION");
     lines.push("Caution delivered: " + (formValues.cautionGiven ? "Yes" : "No"));
-    lines.push("Caution text: " + cautionText);
+    lines.push("Arrest caution (WHEN QUESTIONED): " + cautionText);
+    lines.push("Roadside report caution (NOW): " + cautionRoadsideText);
+    lines.push("Caution delivery notes:");
+    cautionNotes.forEach(function (entry, index) {
+      lines.push((index + 1).toString() + ". " + entry);
+    });
     lines.push("");
 
     lines.push("OUTCOME");

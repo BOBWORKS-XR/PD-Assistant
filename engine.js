@@ -47,6 +47,15 @@
   var PACE_CAUTION_TEXT =
     "You do not have to say anything, but it may harm your defence if you do not mention when questioned something which you later rely on in court. Anything you do say may be given in evidence.";
 
+  var TOR_NOW_CAUTION_TEXT =
+    "You do not have to say anything, but it may harm your defence if you do not mention now something which you later rely on in court. Anything you do say may be given in evidence.";
+
+  var CAUTION_DELIVERY_NOTES = [
+    "Arrest caution: state time + reason for arrest, then deliver WHEN QUESTIONED caution and confirm understanding.",
+    "Roadside report (TOR): deliver NOW caution and record any reply made.",
+    "Keep meaning exact; wording variants are acceptable only if legal meaning is preserved.",
+  ];
+
   var CITY_POLICY = {
     speedLimitUrbanMph: 50,
     speedLimitRuralMph: 50,
@@ -1498,6 +1507,8 @@
       identityContext: identityContext,
       necessityChecklist: necessityChecklist,
       cautionText: PACE_CAUTION_TEXT,
+      roadsideCautionText: TOR_NOW_CAUTION_TEXT,
+      cautionDeliveryNotes: CAUTION_DELIVERY_NOTES,
       sections: sections,
       immediateActions: immediateActions,
       tacticalActions: tacticalActions,

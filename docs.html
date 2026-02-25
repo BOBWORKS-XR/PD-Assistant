@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EPICAL PD Docs</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./docs.css" />
+  </head>
+  <body class="theme-dark docs-page">
+    <header class="docs-header" id="docs-header">
+      <div class="docs-main-row">
+        <nav class="ops-tabs" aria-label="Main Tabs">
+          <a class="ops-tab" href="./index.html">Assistant</a>
+          <a class="ops-tab" href="./investigations.html">Investigation</a>
+          <a class="ops-tab is-active" aria-current="page" href="./docs.html">Docs</a>
+        </nav>
+        <button type="button" id="theme-toggle" class="secondary-btn docs-theme-btn" aria-label="Toggle theme">🌙</button>
+      </div>
+      <div class="docs-sub-row">
+        <button
+          type="button"
+          id="docs-menu-toggle"
+          class="secondary-btn docs-menu-toggle"
+          aria-expanded="false"
+          aria-controls="docs-sidebar"
+          aria-label="Open section menu"
+        >
+          ☰
+        </button>
+        <div class="docs-subtabs" role="tablist" aria-label="Document Tabs">
+          <button
+            type="button"
+            id="docs-tab-radio-rank"
+            class="docs-subtab is-active"
+            data-doc="radio-rank"
+            role="tab"
+            aria-selected="true"
+          >
+            Radio/Rank
+          </button>
+          <button
+            type="button"
+            id="docs-tab-legislation"
+            class="docs-subtab"
+            data-doc="legislation"
+            role="tab"
+            aria-selected="false"
+          >
+            Legislation
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <aside id="docs-sidebar" class="docs-sidebar" aria-label="Section navigation">
+      <h2 id="docs-sidebar-title">Radio/Rank Sections</h2>
+      <nav id="docs-sidebar-nav" class="docs-sidebar-nav"></nav>
+    </aside>
+
+    <main class="docs-main">
+      <section class="panel docs-intro">
+        <h1>ECPS Reference Docs</h1>
+        <p class="sub">
+          Reformatted from your uploaded PDFs for quick in-game use. Use the left menu to jump to document sections.
+        </p>
+      </section>
+      <section class="panel">
+        <div id="docs-content" class="docs-content"></div>
+      </section>
+    </main>
+
+    <script src="./docs.js"></script>
+  </body>
+</html>
